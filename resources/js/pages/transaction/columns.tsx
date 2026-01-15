@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
     DropdownMenu,
@@ -8,6 +7,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/intent-button';
 import { destroy, edit } from '@/routes/transactions';
 import { Transaction } from '@/types';
 import { Link, router } from '@inertiajs/react';

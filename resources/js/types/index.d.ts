@@ -67,3 +67,37 @@ interface PermissionFormProps {
     };
     groups?: string[];
 }
+
+export interface Tag {
+    id: number;
+    name: string;
+    slug: string;
+}
+
+export interface Course {
+    id: number;
+    title: string;
+    slug: string;
+    description: string | null;
+    thumbnail: string | null;
+    is_published: boolean;
+    instructor?: User;
+    tags?: Tag[];
+    lesson_count?: number;
+    total_duration?: number;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface Lesson {
+    id: number;
+    course_id: number;
+    title: string;
+    content_type: 'video' | 'article';
+    video_url: string | null;
+    content: string | null;
+    duration: number | null;
+    order: number;
+    created_at: string;
+    updated_at: string;
+}

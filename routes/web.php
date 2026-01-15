@@ -33,6 +33,19 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::post('/backup/run', [BackupController::class, 'run'])->name('backup.run');
     Route::get('/backup/download/{file}', [BackupController::class, 'download'])->name('backup.download');
     Route::delete('/backup/delete/{file}', [BackupController::class, 'delete'])->name('backup.delete');
+
+    // LMS Routes
+    Route::get('/courses', function () {
+        return Inertia::render('courses/index');
+    })->name('courses.index');
+
+    Route::get('/courses/{slug}', function ($slug) {
+        return Inertia::render('courses/[slug]');
+    })->name('courses.show');
+
+    Route::get('/courses/{slug}/lessons/{id}', function ($slug, $id) {
+        return Inertia::render('courses/[slug]/lessons/[id]');
+    })->name('lessons.show');
 });
 
 require __DIR__ . '/settings.php';
