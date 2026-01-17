@@ -6,6 +6,7 @@ import {
     Card,
     CardContent,
     CardDescription,
+    CardFooter,
     CardHeader,
     CardTitle,
 } from './ui/card';
@@ -25,7 +26,7 @@ export function CourseCard({ course }: CourseCardProps) {
     return (
         <Link href={`/courses/${course.slug}`}>
             <Card className="group overflow-hidden border-border/40 bg-card/50 backdrop-blur transition-all hover:border-border hover:bg-card/80 hover:shadow-lg">
-                <div className="relative aspect-video overflow-hidden bg-muted">
+                {/* <div className="relative aspect-video overflow-hidden bg-muted">
                     {course.thumbnail ? (
                         <img
                             src={course.thumbnail}
@@ -37,19 +38,9 @@ export function CourseCard({ course }: CourseCardProps) {
                             <PlayCircle className="h-16 w-16 text-primary/40" />
                         </div>
                     )}
-                </div>
+                </div> */}
                 <CardHeader className="space-y-2">
-                    <div className="flex flex-wrap gap-1.5">
-                        {course.tags?.map((tag) => (
-                            <Badge
-                                key={tag.id}
-                                variant="secondary"
-                                className="text-xs font-medium"
-                            >
-                                {tag.name}
-                            </Badge>
-                        ))}
-                    </div>
+                    
                     <CardTitle className="line-clamp-2 text-lg group-hover:text-primary">
                         {course.title}
                     </CardTitle>
@@ -67,6 +58,19 @@ export function CourseCard({ course }: CourseCardProps) {
                         <span>{formatDuration(course.total_duration)}</span>
                     </div>
                 </CardContent>
+                <CardFooter>
+                    <div className="flex flex-wrap gap-1.5">
+                        {course.tags?.map((tag) => (
+                            <Badge
+                                key={tag.id}
+                                variant="secondary"
+                                className="text-xs font-medium"
+                            >
+                                {tag.name}
+                            </Badge>
+                        ))}
+                    </div>
+                </CardFooter>
             </Card>
         </Link>
     );

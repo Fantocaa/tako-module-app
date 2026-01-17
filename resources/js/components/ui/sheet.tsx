@@ -12,13 +12,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./dialog"
+} from "./intent-dialog"
 
 const Sheet = DialogTriggerPrimitive
 
 interface SheetContentProps
   extends Omit<ModalOverlayProps, "children">,
-    Pick<DialogProps, "aria-label" | "role" | "aria-labelledby" | "children"> {
+  Pick<DialogProps, "aria-label" | "role" | "aria-labelledby" | "children"> {
   closeButton?: boolean
   isFloat?: boolean
   side?: "top" | "bottom" | "left" | "right"

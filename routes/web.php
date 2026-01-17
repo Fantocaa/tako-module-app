@@ -44,7 +44,9 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     })->name('courses.show');
 
     Route::get('/courses/{slug}/lessons/{id}', function ($slug, $id) {
-        return Inertia::render('courses/[slug]/lessons/[id]');
+        return Inertia::render('courses/[slug]/lessons/[id]', [
+            'lessonId' => $id,
+        ]);
     })->name('lessons.show');
 });
 

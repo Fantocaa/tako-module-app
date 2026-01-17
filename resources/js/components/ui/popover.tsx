@@ -19,7 +19,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "./dialog"
+} from "./intent-dialog"
 
 type PopoverProps = DialogTriggerProps
 const Popover = (props: PopoverProps) => {

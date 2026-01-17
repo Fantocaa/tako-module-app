@@ -1,4 +1,4 @@
-import { Avatar } from '@/components/ui/avatar';
+import { Avatar } from '@/components/ui/intent-avatar';
 import { Button } from '@/components/ui/intent-button';
 import {
     Navbar,
@@ -29,7 +29,6 @@ export default function AppNavbar(props: NavbarProps) {
                         href="/courses"
                     >
                         <Avatar
-                            isSquare
                             size="sm"
                             className="outline-hidden"
                             src="https://design.intentui.com/logo?color=155DFC"

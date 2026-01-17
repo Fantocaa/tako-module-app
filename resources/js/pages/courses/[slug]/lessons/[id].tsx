@@ -17,7 +17,7 @@ import { Separator } from '@/components/ui/separator';
 import type { Course, Lesson } from '@/types';
 import { Link, router } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
-import { useState } from 'react';
+
 
 // Dummy data
 const DUMMY_COURSE: Course = {
@@ -113,14 +113,14 @@ function formatDuration(seconds: number | null) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export default function LessonShow() {
+export default function LessonShow({ lessonId }: { lessonId: string }) {
     // In real app, get lesson ID from route params
-    const [currentLessonId] = useState(1);
+    // const [currentLessonId] = useState(1);
     const course = DUMMY_COURSE;
     const lessons = DUMMY_LESSONS;
     const currentLesson =
-        lessons.find((l) => l.id === currentLessonId) || lessons[0];
-    const currentIndex = lessons.findIndex((l) => l.id === currentLessonId);
+        lessons.find((l) => l.id === Number(lessonId)) || lessons[0];
+    const currentIndex = lessons.findIndex((l) => l.id === Number(lessonId));
     const prevLesson = currentIndex > 0 ? lessons[currentIndex - 1] : null;
     const nextLesson =
         currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null;
@@ -131,12 +131,12 @@ export default function LessonShow() {
                 <AppNavbar />
             </Container>
             <Container>
-                <div className="flex h-screen flex-col lg:flex-row">
+                <div className="flex h-screen flex-col lg:flex-row gap-4 ">
                     {/* Main Content */}
-                    <div className="flex flex-1 flex-col overflow-hidden">
+                    <div className="flex flex-1 flex-col overflow-hidden rounded-2xl">
                         {/* Content Area - Video or Article */}
                         {currentLesson.content_type === 'video' &&
-                        currentLesson.video_url ? (
+                            currentLesson.video_url ? (
                             <MediaPlayer
                                 className="aspect-video w-full"
                                 autoHide
@@ -155,68 +155,60 @@ export default function LessonShow() {
                                 </MediaPlayerControls>
                             </MediaPlayer>
                         ) : (
-                            <div className="flex aspect-video w-full items-center justify-center bg-muted">
-                                <p className="text-muted-foreground">
+                            <div className="">
+                                {/* <p className="text-muted-foreground">
                                     Konten artikel - scroll ke bawah untuk
                                     membaca
-                                </p>
+                                </p> */}
                             </div>
                         )}
 
                         {/* Lesson Info */}
-                        <div className="flex-1 overflow-auto bg-background">
-                            <div className="mx-auto max-w-4xl space-y-6 p-6">
-                                {/* Navigation */}
-                                <div className="flex items-center justify-between">
-                                    <Link href={`/courses/${course.slug}`}>
-                                        <Button
-                                            intent="plain"
-                                            size="sm"
-                                            className="gap-2"
-                                        >
-                                            <ChevronLeft className="h-4 w-4" />
-                                            Back to course
-                                        </Button>
-                                    </Link>
-                                    <div className="flex gap-2">
-                                        {prevLesson && (
-                                            <Button
-                                                intent="outline"
-                                                size="sm"
-                                                onClick={() =>
-                                                    router.visit(
-                                                        `/courses/${course.slug}/lessons/${prevLesson.id}`,
-                                                    )
-                                                }
-                                            >
-                                                <ChevronLeft className="h-4 w-4" />
-                                                Previous
-                                            </Button>
-                                        )}
-                                        {nextLesson && (
-                                            <Button
-                                                intent="primary"
-                                                size="sm"
-                                                onClick={() =>
-                                                    router.visit(
-                                                        `/courses/${course.slug}/lessons/${nextLesson.id}`,
-                                                    )
-                                                }
-                                            >
-                                                Next
-                                                <ChevronRight className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                    </div>
-                                </div>
+                        <div className="flex-1 overflow-auto">
+                            <div className="mx-auto max-w-4xl space-y-6 pt-6">
 
-                                <Separator />
 
                                 {/* Lesson Title */}
                                 <div className="space-y-3">
-                                    <h1 className="text-3xl font-bold">
-                                        {currentLesson.title}
-                                    </h1>
+                                    <div className="flex justify-between items-center">
+                                        <div>
+
+                                        <h1 className="text-3xl font-bold">
+                                            {currentLesson.title}
+                                        </h1>
+                                        </div>
+                                        <div className="flex gap-2">
+                                            {prevLesson && (
+                                                <Button
+                                                    intent="outline"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        router.visit(
+                                                            `/courses/${course.slug}/lessons/${prevLesson.id}`,
+                                                        )
+                                                    }
+                                                >
+                                                    <ChevronLeft className="h-4 w-4" />
+                                                    Previous
+                                                </Button>
+                                            )}
+                                            {nextLesson && (
+                                                <Button
+                                                    intent="primary"
+                                                    size="sm"
+                                                    onClick={() =>
+                                                        router.visit(
+                                                            `/courses/${course.slug}/lessons/${nextLesson.id}`,
+                                                        )
+                                                    }
+                                                >
+                                                    Next
+                                                    <ChevronRight className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
+
+                                    </div>
                                     {currentLesson.content_type === 'video' && (
                                         <p className="text-muted-foreground">
                                             {currentLesson.content ||
@@ -287,8 +279,8 @@ export default function LessonShow() {
                     </div>
 
                     {/* Sidebar - Lessons List */}
-                    <div className="w-full border-l bg-card lg:w-80 xl:w-96">
-                        <div className="flex h-full flex-col">
+                    <div className="w-full border rounded-2xl lg:w-80 xl:w-96 h-fit">
+                        <div className="flex h-fit flex-col">
                             {/* Course Header */}
                             <div className="space-y-3 border-b p-4">
                                 <Link href={`/courses/${course.slug}`}>
@@ -312,19 +304,17 @@ export default function LessonShow() {
                                                     `/courses/${course.slug}/lessons/${lesson.id}`,
                                                 )
                                             }
-                                            className={`group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors ${
-                                                lesson.id === currentLessonId
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : 'hover:bg-muted'
-                                            }`}
+                                            className={`group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors ${lesson.id === Number(lessonId)
+                                                ? 'bg-primary/10 text-primary'
+                                                : 'hover:bg-muted'
+                                                }`}
                                         >
                                             <div
-                                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs font-medium ${
-                                                    lesson.id ===
-                                                    currentLessonId
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'bg-muted text-muted-foreground group-hover:bg-primary/20'
-                                                }`}
+                                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs font-medium ${lesson.id ===
+                                                    Number(lessonId)
+                                                    ? 'bg-primary text-primary-foreground'
+                                                    : 'bg-muted text-muted-foreground group-hover:bg-primary/20'
+                                                    }`}
                                             >
                                                 {index + 1}
                                             </div>
