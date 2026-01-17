@@ -83,6 +83,7 @@ export interface Course {
     is_published: boolean;
     instructor?: User;
     tags?: Tag[];
+    lessons?: Lesson[];
     lesson_count?: number;
     total_duration?: number;
     created_at: string;

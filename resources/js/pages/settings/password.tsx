@@ -9,7 +9,7 @@ import { useRef } from 'react';
 
 import HeadingSmall from '@/components/heading-small';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/intent-button';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/user-password';
 

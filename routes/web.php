@@ -2,6 +2,8 @@
 
 use App\Http\Controllers\AuditLogController;
 use App\Http\Controllers\BackupController;
+use App\Http\Controllers\CourseController;
+use App\Http\Controllers\LessonController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\RoleController;
@@ -35,19 +37,8 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::delete('/backup/delete/{file}', [BackupController::class, 'delete'])->name('backup.delete');
 
     // LMS Routes
-    Route::get('/courses', function () {
-        return Inertia::render('courses/index');
-    })->name('courses.index');
-
-    Route::get('/courses/{slug}', function ($slug) {
-        return Inertia::render('courses/[slug]');
-    })->name('courses.show');
-
-    Route::get('/courses/{slug}/lessons/{id}', function ($slug, $id) {
-        return Inertia::render('courses/[slug]/lessons/[id]', [
-            'lessonId' => $id,
-        ]);
-    })->name('lessons.show');
+    Route::resource('courses', CourseController::class);
+    Route::resource('courses.lessons', LessonController::class)->except(['index']);
 });
 
 require __DIR__ . '/settings.php';

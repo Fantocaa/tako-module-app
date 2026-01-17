@@ -1,5 +1,5 @@
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/intent-button';
+import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     Select,

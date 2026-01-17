@@ -16,8 +16,9 @@ interface CourseCardProps {
 }
 
 export function CourseCard({ course }: CourseCardProps) {
-    const formatDuration = (minutes: number | undefined) => {
-        if (!minutes) return '0m';
+    const formatDuration = (seconds: number | undefined) => {
+        if (!seconds) return '0m';
+        const minutes = Math.floor(seconds / 60);
         const hours = Math.floor(minutes / 60);
         const mins = minutes % 60;
         return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;

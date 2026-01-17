@@ -36,7 +36,7 @@ export default function IconPicker({ value, onChange }: IconPickerProps) {
               onClick={() => setOpen(true)}
               readOnly
               placeholder="Pilih icon (Lucide)"
-              className="cursor-pointer"
+              className="cursor-pointer w-full"
             />
           </div>
         </PopoverTrigger>

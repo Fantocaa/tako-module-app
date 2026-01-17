@@ -21,8 +21,16 @@ class UpdateCourseRequest extends FormRequest
      */
     public function rules(): array
     {
+        $courseId = $this->route('course')->id;
+
         return [
-            //
+            'title' => ['required', 'string', 'max:255'],
+            'slug' => ['required', 'string', 'max:255', 'unique:courses,slug,' . $courseId],
+            'description' => ['nullable', 'string'],
+            'thumbnail' => ['nullable', 'string', 'max:255'],
+            'is_published' => ['boolean'],
+            'tags' => ['nullable', 'array'],
+            'tags.*' => ['exists:tags,id'],
         ];
     }
 }

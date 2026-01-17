@@ -1,5 +1,5 @@
 import Heading from '@/components/heading';
-import { Button } from '@/components/ui/intent-button';
+import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { cn, isSameUrl, resolveUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';

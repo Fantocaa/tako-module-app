@@ -6,7 +6,7 @@ import {
   ShieldCheckIcon,
   Squares2X2Icon,
 } from "@heroicons/react/24/outline"
-import { Avatar } from "@/components/ui/avatar"
+import { Avatar } from "@/components/ui/intent-avatar"
 import {
   Menu,
   MenuContent,

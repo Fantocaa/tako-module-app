@@ -6,7 +6,7 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/intent-button';
+import { Button } from '@/components/ui/button';
 import {
     NavigationMenu,
     NavigationMenuItem,

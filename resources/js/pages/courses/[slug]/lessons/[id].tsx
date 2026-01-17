@@ -13,98 +13,17 @@ import {
     MediaPlayerVolume,
 } from '@/components/ui/media-player';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import type { Course, Lesson } from '@/types';
-import { Link, router } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Clock } from 'lucide-react';
+import { Link, router, usePage } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight, Clock, Edit } from 'lucide-react';
 
-
-// Dummy data
-const DUMMY_COURSE: Course = {
-    id: 1,
-    title: 'Belajar design system',
-    slug: 'belajar-design-system',
-    description:
-        'Pelajari step by step membangun design system dari nol mulai dari design tokens, arsitektur komponen, aksesibilitas, theming, dan hal lain menarik lainnya.',
-    thumbnail: null,
-    is_published: true,
-    lesson_count: 20,
-    total_duration: 1260,
-    tags: [
-        { id: 1, name: 'TailwindCSS', slug: 'tailwindcss' },
-        { id: 2, name: 'React', slug: 'react' },
-        { id: 3, name: 'TypeScript', slug: 'typescript' },
-    ],
-    created_at: '2026-01-01',
-    updated_at: '2026-01-01',
-};
-
-const DUMMY_LESSONS: Lesson[] = [
-    {
-        id: 1,
-        course_id: 1,
-        title: 'Intro',
-        content_type: 'video',
-        video_url:
-            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
-        content:
-            'Belajar membuat basic component dengan design system yang baik.',
-        duration: 1260,
-        order: 1,
-        created_at: '2026-01-01',
-        updated_at: '2026-01-01',
-    },
-    {
-        id: 2,
-        course_id: 1,
-        title: 'Tailwind merge',
-        content_type: 'article',
-        video_url: null,
-        content: `
-# Tailwind Merge
-
-Tailwind Merge adalah utility yang sangat berguna untuk menggabungkan class Tailwind CSS dengan cara yang cerdas.
-
-## Kenapa Perlu Tailwind Merge?
-
-Ketika kita membuat komponen yang reusable, seringkali kita perlu menggabungkan class default dengan class yang diberikan oleh user. Tanpa tailwind-merge, class yang sama bisa konflik.
-
-## Contoh Penggunaan
-
-\`\`\`tsx
-import { cn } from '@/lib/utils';
-
-function Button({ className, ...props }) {
-  return (
-    <button 
-      className={cn('px-4 py-2 bg-blue-500', className)}
-      {...props}
-    />
-  );
+interface LessonShowProps {
+    course: Course;
+    lesson: Lesson;
+    lessons: Lesson[];
+    prevLesson: Lesson | null;
+    nextLesson: Lesson | null;
 }
-\`\`\`
-
-Dengan cara ini, class yang diberikan user akan override class default dengan benar.
-        `,
-        duration: 546,
-        order: 2,
-        created_at: '2026-01-01',
-        updated_at: '2026-01-01',
-    },
-    {
-        id: 3,
-        course_id: 1,
-        title: 'Variabnya',
-        content_type: 'video',
-        video_url:
-            'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ElephantsDream.mp4',
-        content: null,
-        duration: 510,
-        order: 3,
-        created_at: '2026-01-01',
-        updated_at: '2026-01-01',
-    },
-];
 
 function formatDuration(seconds: number | null) {
     if (!seconds) return '0:00';
@@ -113,17 +32,15 @@ function formatDuration(seconds: number | null) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export default function LessonShow({ lessonId }: { lessonId: string }) {
-    // In real app, get lesson ID from route params
-    // const [currentLessonId] = useState(1);
-    const course = DUMMY_COURSE;
-    const lessons = DUMMY_LESSONS;
-    const currentLesson =
-        lessons.find((l) => l.id === Number(lessonId)) || lessons[0];
-    const currentIndex = lessons.findIndex((l) => l.id === Number(lessonId));
-    const prevLesson = currentIndex > 0 ? lessons[currentIndex - 1] : null;
-    const nextLesson =
-        currentIndex < lessons.length - 1 ? lessons[currentIndex + 1] : null;
+export default function LessonShow({
+    course,
+    lesson,
+    lessons,
+    prevLesson,
+    nextLesson,
+}: LessonShowProps) {
+    const { auth } = usePage().props as any;
+    const isOwner = auth?.user?.id === course.instructor?.id;
 
     return (
         <>
@@ -135,16 +52,13 @@ export default function LessonShow({ lessonId }: { lessonId: string }) {
                     {/* Main Content */}
                     <div className="flex flex-1 flex-col overflow-hidden rounded-2xl">
                         {/* Content Area - Video or Article */}
-                        {currentLesson.content_type === 'video' &&
-                            currentLesson.video_url ? (
+                        {lesson.content_type === 'video' && lesson.video_url ? (
                             <MediaPlayer
                                 className="aspect-video w-full"
                                 autoHide
-                                label={currentLesson.title}
+                                label={lesson.title}
                             >
-                                <MediaPlayerVideo
-                                    src={currentLesson.video_url}
-                                />
+                                <MediaPlayerVideo src={lesson.video_url} />
                                 <MediaPlayerControlsOverlay />
                                 <MediaPlayerControls>
                                     <MediaPlayerPlay />
@@ -155,27 +69,37 @@ export default function LessonShow({ lessonId }: { lessonId: string }) {
                                 </MediaPlayerControls>
                             </MediaPlayer>
                         ) : (
-                            <div className="">
-                                {/* <p className="text-muted-foreground">
+                            <div className="bg-muted aspect-video w-full flex items-center justify-center">
+                                <p className="text-muted-foreground">
                                     Konten artikel - scroll ke bawah untuk
                                     membaca
-                                </p> */}
+                                </p>
                             </div>
                         )}
 
                         {/* Lesson Info */}
                         <div className="flex-1 overflow-auto">
                             <div className="mx-auto max-w-4xl space-y-6 pt-6">
-
-
                                 {/* Lesson Title */}
                                 <div className="space-y-3">
                                     <div className="flex justify-between items-center">
-                                        <div>
-
-                                        <h1 className="text-3xl font-bold">
-                                            {currentLesson.title}
-                                        </h1>
+                                        <div className="flex items-center gap-4">
+                                            <h1 className="text-3xl font-bold">
+                                                {lesson.title}
+                                            </h1>
+                                            {isOwner && (
+                                                <Button
+                                                    intent="plain"
+                                                    size="sq-sm"
+                                                    onClick={() =>
+                                                        router.visit(
+                                                            `/courses/${course.slug}/lessons/${lesson.id}/edit`,
+                                                        )
+                                                    }
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                            )}
                                         </div>
                                         <div className="flex gap-2">
                                             {prevLesson && (
@@ -207,23 +131,22 @@ export default function LessonShow({ lessonId }: { lessonId: string }) {
                                                 </Button>
                                             )}
                                         </div>
-
                                     </div>
-                                    {currentLesson.content_type === 'video' && (
+                                    {lesson.content_type === 'video' && (
                                         <p className="text-muted-foreground">
-                                            {currentLesson.content ||
+                                            {lesson.content ||
                                                 'Tonton video untuk mempelajari materi ini'}
                                         </p>
                                     )}
                                 </div>
 
                                 {/* Article Content */}
-                                {currentLesson.content_type === 'article' &&
-                                    currentLesson.content && (
-                                        <div className="prose prose-neutral dark:prose-invert max-w-none">
+                                {lesson.content_type === 'article' &&
+                                    lesson.content && (
+                                        <div className="prose prose-neutral dark:prose-invert max-w-none pb-12">
                                             <div
                                                 dangerouslySetInnerHTML={{
-                                                    __html: currentLesson.content
+                                                    __html: lesson.content
                                                         .split('\n')
                                                         .map((line) => {
                                                             // Simple markdown parsing
@@ -296,37 +219,38 @@ export default function LessonShow({ lessonId }: { lessonId: string }) {
                             {/* Lessons List */}
                             <ScrollArea className="flex-1">
                                 <div className="space-y-1 p-2">
-                                    {lessons.map((lesson, index) => (
+                                    {lessons.map((l, index) => (
                                         <button
-                                            key={lesson.id}
+                                            key={l.id}
                                             onClick={() =>
                                                 router.visit(
-                                                    `/courses/${course.slug}/lessons/${lesson.id}`,
+                                                    `/courses/${course.slug}/lessons/${l.id}`,
                                                 )
                                             }
-                                            className={`group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors ${lesson.id === Number(lessonId)
-                                                ? 'bg-primary/10 text-primary'
-                                                : 'hover:bg-muted'
-                                                }`}
+                                            className={`group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors ${
+                                                l.id === lesson.id
+                                                    ? 'bg-primary/10 text-primary'
+                                                    : 'hover:bg-muted'
+                                            }`}
                                         >
                                             <div
-                                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs font-medium ${lesson.id ===
-                                                    Number(lessonId)
-                                                    ? 'bg-primary text-primary-foreground'
-                                                    : 'bg-muted text-muted-foreground group-hover:bg-primary/20'
-                                                    }`}
+                                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs font-medium ${
+                                                    l.id === lesson.id
+                                                        ? 'bg-primary text-primary-foreground'
+                                                        : 'bg-muted text-muted-foreground group-hover:bg-primary/20'
+                                                }`}
                                             >
                                                 {index + 1}
                                             </div>
                                             <div className="flex-1 space-y-1">
                                                 <h3 className="text-sm leading-tight font-medium">
-                                                    {lesson.title}
+                                                    {l.title}
                                                 </h3>
                                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                                     <Clock className="h-3 w-3" />
                                                     <span>
                                                         {formatDuration(
-                                                            lesson.duration,
+                                                            l.duration,
                                                         )}
                                                     </span>
                                                 </div>

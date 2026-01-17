@@ -7,7 +7,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/intent-button';
+import { Button } from '@/components/ui/button';
 import { destroy, edit } from '@/routes/transactions';
 import { Transaction } from '@/types';
 import { Link, router } from '@inertiajs/react';

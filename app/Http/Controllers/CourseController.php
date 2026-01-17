@@ -3,25 +3,68 @@
 namespace App\Http\Controllers;
 
 use App\Models\Course;
+use App\Models\Tag;
 use App\Http\Requests\StoreCourseRequest;
 use App\Http\Requests\UpdateCourseRequest;
+use Illuminate\Http\Request;
+use Inertia\Inertia;
+use Inertia\Response;
+use Illuminate\Support\Str;
 
 class CourseController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request): Response
     {
-        //
+        $query = Course::query()
+            ->with(['tags', 'instructor'])
+            ->where(function ($q) {
+                $q->where('is_published', true)
+                  ->orWhere('instructor_id', auth()->id());
+            });
+
+        // Filter by tag
+        if ($request->filled('tag')) {
+            $query->whereHas('tags', function ($q) use ($request) {
+                $q->where('slug', $request->tag);
+            });
+        }
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+
+        $courses = $query->latest()->paginate(12)->withQueryString();
+
+        $tags = Tag::orderBy('name')->get();
+
+        return Inertia::render('courses/index', [
+            'courses' => $courses,
+            'tags' => $tags,
+            'filters' => [
+                'tag' => $request->tag,
+                'search' => $request->search,
+            ],
+        ]);
     }
 
     /**
      * Show the form for creating a new resource.
      */
-    public function create()
+    public function create(): Response
     {
-        //
+        $tags = Tag::orderBy('name')->get();
+
+        return Inertia::render('courses/create', [
+            'tags' => $tags,
+        ]);
     }
 
     /**
@@ -29,23 +72,51 @@ class CourseController extends Controller
      */
     public function store(StoreCourseRequest $request)
     {
-        //
+        $validated = $request->validated();
+        
+        // Set instructor_id to current user
+        $validated['instructor_id'] = auth()->id();
+
+        // Auto-generate slug if not provided
+        if (empty($validated['slug'])) {
+            $validated['slug'] = Str::slug($validated['title']);
+        }
+
+        $course = Course::create($validated);
+
+        // Attach tags if provided
+        if (isset($validated['tags'])) {
+            $course->tags()->sync($validated['tags']);
+        }
+
+        return redirect()->route('courses.index')
+            ->with('success', 'Course created successfully.');
     }
 
     /**
      * Display the specified resource.
      */
-    public function show(Course $course)
+    public function show(Course $course): Response
     {
-        //
+        $course->load(['lessons', 'tags', 'instructor']);
+
+        return Inertia::render('courses/[slug]', [
+            'course' => $course,
+        ]);
     }
 
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Course $course)
+    public function edit(Course $course): Response
     {
-        //
+        $course->load('tags');
+        $tags = Tag::orderBy('name')->get();
+
+        return Inertia::render('courses/edit', [
+            'course' => $course,
+            'tags' => $tags,
+        ]);
     }
 
     /**
@@ -53,7 +124,17 @@ class CourseController extends Controller
      */
     public function update(UpdateCourseRequest $request, Course $course)
     {
-        //
+        $validated = $request->validated();
+
+        $course->update($validated);
+
+        // Sync tags if provided
+        if (isset($validated['tags'])) {
+            $course->tags()->sync($validated['tags']);
+        }
+
+        return redirect()->route('courses.show', $course)
+            ->with('success', 'Course updated successfully.');
     }
 
     /**
@@ -61,6 +142,9 @@ class CourseController extends Controller
      */
     public function destroy(Course $course)
     {
-        //
+        $course->delete();
+
+        return redirect()->route('courses.index')
+            ->with('success', 'Course deleted successfully.');
     }
 }

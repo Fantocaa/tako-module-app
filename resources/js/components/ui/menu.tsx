@@ -30,7 +30,7 @@ import {
   dropdownItemStyles,
   dropdownSectionStyles,
 } from "./dropdown"
-import { PopoverContent, type PopoverContentProps } from "./popover"
+import { PopoverContent, type PopoverContentProps } from "./intent-popover"
 
 const Menu = (props: MenuTriggerPrimitiveProps) => <MenuTriggerPrimitive {...props} />
 

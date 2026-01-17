@@ -8,7 +8,7 @@ import { useIsMobile } from "@/hooks/use-mobile"
 import { cx } from "@/lib/primitive"
 import { Button, type ButtonProps } from "./intent-button"
 import { Separator } from "./separator"
-import { Sheet, SheetBody, SheetContent } from "./sheet"
+import { Sheet, SheetBody, SheetContent } from "./intent-sheet"
 
 interface NavbarContextProps {
   open: boolean
