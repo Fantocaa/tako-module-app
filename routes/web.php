@@ -37,8 +37,10 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::delete('/backup/delete/{file}', [BackupController::class, 'delete'])->name('backup.delete');
 
     // LMS Routes
+    Route::get('/courses/index', [CourseController::class, 'indexCrud'])->name('courses.index.crud');
+    Route::post('/courses/{course}/lessons/reorder', [LessonController::class, 'reorder'])->name('courses.lessons.reorder');
     Route::resource('courses', CourseController::class);
-    Route::resource('courses.lessons', LessonController::class)->except(['index']);
+    Route::resource('courses.lessons', LessonController::class);
 });
 
 require __DIR__ . '/settings.php';

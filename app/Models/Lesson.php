@@ -13,15 +13,20 @@ class Lesson extends Model
         'title',
         'content_type',
         'video_url',
+        'video_path',
         'content',
         'duration',
         'order',
+        'is_published',
+        'is_preview',
     ];
 
     protected $casts = [
         'content_type' => 'string',
         'duration' => 'integer',
         'order' => 'integer',
+        'is_published' => 'boolean',
+        'is_preview' => 'boolean',
     ];
 
     /**

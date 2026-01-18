@@ -1,10 +1,10 @@
 import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Checkbox } from '@/components/ui/checkbox';
+import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
 import { useEffect } from 'react';
-import { cn } from '@/lib/utils';
 
 interface CourseFormProps {
     course?: any;
@@ -21,14 +21,16 @@ export default function CourseForm({
     action,
     method = 'post',
 }: CourseFormProps) {
-    const { data, setData, post, put, processing, errors, transform } = useForm({
-        title: course?.title || '',
-        slug: course?.slug || '',
-        description: course?.description || '',
-        thumbnail: course?.thumbnail || '',
-        is_published: course?.is_published ?? true,
-        selectedTags: course?.tags?.map((t: any) => t.id) || [],
-    });
+    const { data, setData, post, put, processing, errors, transform } = useForm(
+        {
+            title: course?.title || '',
+            slug: course?.slug || '',
+            description: course?.description || '',
+            thumbnail: course?.thumbnail || '',
+            is_published: course?.is_published ?? true,
+            selectedTags: course?.tags?.map((t: any) => t.id) || [],
+        },
+    );
 
     // Auto-generate slug from title
     useEffect(() => {
@@ -43,7 +45,7 @@ export default function CourseForm({
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        
+
         // Transform data to match backend expectation
         transform((data) => ({
             ...data,
@@ -105,17 +107,19 @@ export default function CourseForm({
                 <Label htmlFor="description">Description</Label>
                 <textarea
                     id="description"
-                    className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex min-h-[120px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     value={data.description}
                     onChange={(e) => setData('description', e.target.value)}
                     placeholder="Tell us about this course..."
                 />
                 {errors.description && (
-                    <p className="text-sm text-destructive">{errors.description}</p>
+                    <p className="text-sm text-destructive">
+                        {errors.description}
+                    </p>
                 )}
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
                 <Label htmlFor="thumbnail">Thumbnail URL</Label>
                 <Input
                     id="thumbnail"
@@ -126,21 +130,21 @@ export default function CourseForm({
                 {errors.thumbnail && (
                     <p className="text-sm text-destructive">{errors.thumbnail}</p>
                 )}
-            </div>
+            </div> */}
 
             <div className="space-y-4">
                 <Label>Tags</Label>
-                <div className="flex flex-wrap gap-2">
+                <div className="mt-1 flex flex-wrap gap-2">
                     {tags.map((tag) => (
                         <button
                             key={tag.id}
                             type="button"
                             onClick={() => toggleTag(tag.id)}
                             className={cn(
-                                "px-3 py-1 rounded-full text-xs font-medium border transition-colors",
+                                'cursor-pointer rounded-full border px-3 py-1 text-xs font-medium transition-colors',
                                 data.selectedTags.includes(tag.id)
-                                    ? "bg-primary border-primary text-primary-foreground"
-                                    : "bg-muted border-transparent text-muted-foreground hover:border-border"
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'border-transparent bg-muted text-muted-foreground hover:border-border',
                             )}
                         >
                             {tag.name}
@@ -148,7 +152,9 @@ export default function CourseForm({
                     ))}
                 </div>
                 {errors.selectedTags && (
-                    <p className="text-sm text-destructive">{errors.selectedTags}</p>
+                    <p className="text-sm text-destructive">
+                        {errors.selectedTags}
+                    </p>
                 )}
             </div>
 

@@ -1,13 +1,13 @@
 import AppNavbar from '@/components/app-navbar';
 import { CourseCard } from '@/components/course-card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/intent-button';
 import type { Course, Tag } from '@/types';
-import { router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Plus, Search } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 interface CoursesIndexProps {
     courses: {
@@ -55,6 +55,7 @@ export default function CoursesIndex({
 
     return (
         <>
+            <Head title="Series" />
             <Container className="py-6 sm:py-12">
                 <AppNavbar />
             </Container>
@@ -74,7 +75,7 @@ export default function CoursesIndex({
                     </div>
                     {auth?.user && (
                         <Button
-                            intent="primary"
+                            variant="default"
                             className="gap-2"
                             onClick={() => router.visit('/courses/create')}
                         >
@@ -149,12 +150,12 @@ export default function CoursesIndex({
                                     }
                                 }}
                                 disabled={!link.url}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                                className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                                     link.active
                                         ? 'bg-primary text-primary-foreground'
                                         : link.url
                                           ? 'bg-muted hover:bg-muted/80'
-                                          : 'bg-muted/50 text-muted-foreground cursor-not-allowed'
+                                          : 'cursor-not-allowed bg-muted/50 text-muted-foreground'
                                 }`}
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                             />

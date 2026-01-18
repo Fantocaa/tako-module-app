@@ -1,6 +1,6 @@
 import AppNavbar from '@/components/app-navbar';
+import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
-import { Button } from '@/components/ui/intent-button';
 import {
     MediaPlayer,
     MediaPlayerControls,
@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/media-player';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Course, Lesson } from '@/types';
-import { Link, router, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight, Clock, Edit } from 'lucide-react';
 
 interface LessonShowProps {
@@ -44,21 +44,29 @@ export default function LessonShow({
 
     return (
         <>
+            <Head title={lesson.title} />
             <Container className="py-6 sm:py-12">
                 <AppNavbar />
             </Container>
             <Container>
-                <div className="flex h-screen flex-col lg:flex-row gap-4 ">
+                <div className="flex h-screen flex-col gap-4 lg:flex-row">
                     {/* Main Content */}
                     <div className="flex flex-1 flex-col overflow-hidden rounded-2xl">
                         {/* Content Area - Video or Article */}
-                        {lesson.content_type === 'video' && lesson.video_url ? (
+                        {lesson.content_type === 'video' &&
+                        (lesson.video_url || lesson.video_path) ? (
                             <MediaPlayer
                                 className="aspect-video w-full"
                                 autoHide
                                 label={lesson.title}
                             >
-                                <MediaPlayerVideo src={lesson.video_url} />
+                                <MediaPlayerVideo
+                                    src={
+                                        lesson.video_path
+                                            ? `/storage/${lesson.video_path}`
+                                            : lesson.video_url!
+                                    }
+                                />
                                 <MediaPlayerControlsOverlay />
                                 <MediaPlayerControls>
                                     <MediaPlayerPlay />
@@ -69,12 +77,13 @@ export default function LessonShow({
                                 </MediaPlayerControls>
                             </MediaPlayer>
                         ) : (
-                            <div className="bg-muted aspect-video w-full flex items-center justify-center">
-                                <p className="text-muted-foreground">
-                                    Konten artikel - scroll ke bawah untuk
-                                    membaca
-                                </p>
-                            </div>
+                            // <div className="bg-muted aspect-video w-full flex items-center justify-center">
+                            //     <p className="text-muted-foreground">
+                            //         Konten artikel - scroll ke bawah untuk
+                            //         membaca
+                            //     </p>
+                            // </div>
+                            <div></div>
                         )}
 
                         {/* Lesson Info */}
@@ -82,15 +91,15 @@ export default function LessonShow({
                             <div className="mx-auto max-w-4xl space-y-6 pt-6">
                                 {/* Lesson Title */}
                                 <div className="space-y-3">
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex items-center justify-between">
                                         <div className="flex items-center gap-4">
                                             <h1 className="text-3xl font-bold">
                                                 {lesson.title}
                                             </h1>
                                             {isOwner && (
                                                 <Button
-                                                    intent="plain"
-                                                    size="sq-sm"
+                                                    variant="ghost"
+                                                    size="icon"
                                                     onClick={() =>
                                                         router.visit(
                                                             `/courses/${course.slug}/lessons/${lesson.id}/edit`,
@@ -104,7 +113,7 @@ export default function LessonShow({
                                         <div className="flex gap-2">
                                             {prevLesson && (
                                                 <Button
-                                                    intent="outline"
+                                                    variant="outline"
                                                     size="sm"
                                                     onClick={() =>
                                                         router.visit(
@@ -118,7 +127,7 @@ export default function LessonShow({
                                             )}
                                             {nextLesson && (
                                                 <Button
-                                                    intent="primary"
+                                                    variant="default"
                                                     size="sm"
                                                     onClick={() =>
                                                         router.visit(
@@ -202,7 +211,7 @@ export default function LessonShow({
                     </div>
 
                     {/* Sidebar - Lessons List */}
-                    <div className="w-full border rounded-2xl lg:w-80 xl:w-96 h-fit">
+                    <div className="h-fit w-full rounded-2xl border lg:w-80 xl:w-96">
                         <div className="flex h-fit flex-col">
                             {/* Course Header */}
                             <div className="space-y-3 border-b p-4">

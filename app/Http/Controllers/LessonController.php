@@ -6,6 +6,7 @@ use App\Models\Course;
 use App\Models\Lesson;
 use App\Http\Requests\StoreLessonRequest;
 use App\Http\Requests\UpdateLessonRequest;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -50,9 +51,16 @@ class LessonController extends Controller
             $validated['order'] = $maxOrder + 1;
         }
 
+        // Handle File Upload
+        if ($request->hasFile('video_file')) {
+            $path = $request->file('video_file')->store('course/lessons', 'public');
+            $validated['video_path'] = $path;
+            $validated['video_url'] = null; // Clear URL if file is uploaded
+        }
+
         $lesson = Lesson::create($validated);
 
-        return redirect()->route('courses.show', $course)
+        return redirect()->route('courses.edit', $course)
             ->with('success', 'Lesson created successfully.');
     }
 
@@ -96,9 +104,28 @@ class LessonController extends Controller
     {
         $validated = $request->validated();
 
+        // Handle File Upload
+        if ($request->hasFile('video_file')) {
+            // Delete old file if exists
+            if ($lesson->video_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($lesson->video_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($lesson->video_path);
+            }
+            
+            $path = $request->file('video_file')->store('course/lessons', 'public');
+            $validated['video_path'] = $path;
+            $validated['video_url'] = null; // Clear URL if file is uploaded
+        } elseif (isset($validated['video_url']) && $validated['video_url']) {
+             // User provided a URL, meaning they might have switched from File to URL.
+             // We should delete existing file if it exists.
+             if ($lesson->video_path && \Illuminate\Support\Facades\Storage::disk('public')->exists($lesson->video_path)) {
+                \Illuminate\Support\Facades\Storage::disk('public')->delete($lesson->video_path);
+            }
+            $validated['video_path'] = null;
+        }
+
         $lesson->update($validated);
 
-        return redirect()->route('courses.lessons.show', [$course, $lesson])
+        return redirect()->route('courses.edit', $course)
             ->with('success', 'Lesson updated successfully.');
     }
 
@@ -117,5 +144,22 @@ class LessonController extends Controller
 
         return redirect()->route('courses.show', $course)
             ->with('success', 'Lesson deleted successfully.');
+    }
+
+    public function reorder(Request $request, Course $course)
+    {
+        $request->validate([
+            'lessons' => 'required|array',
+            'lessons.*.id' => 'required|exists:lessons,id',
+            'lessons.*.order' => 'required|integer',
+        ]);
+
+        foreach ($request->lessons as $item) {
+            Lesson::where('id', $item['id'])
+                ->where('course_id', $course->id)
+                ->update(['order' => $item['order']]);
+        }
+
+        return redirect()->back()->with('success', 'Lesson order updated successfully.');
     }
 }

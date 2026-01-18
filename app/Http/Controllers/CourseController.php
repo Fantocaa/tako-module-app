@@ -55,6 +55,46 @@ class CourseController extends Controller
         ]);
     }
 
+    public function indexCrud(Request $request): Response
+    {
+        $query = Course::query()
+            ->with(['instructor'])
+            ->when(!auth()->user()->hasRole('Super Admin'), function ($q) {
+                // If not super admin, only show own courses? Or maybe all for now depending on requirements.
+                // For now, let's show all but maybe unrelated to role for specific restrictions.
+                // If strict: $q->where('instructor_id', auth()->id());
+            })
+            ->latest();
+
+        // Search
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('title', 'like', "%{$search}%")
+                    ->orWhere('description', 'like', "%{$search}%");
+            });
+        }
+        
+        // Filter by status if needed
+        if ($request->filled('status')) {
+             if ($request->status === 'published') {
+                 $query->where('is_published', true);
+             } elseif ($request->status === 'draft') {
+                 $query->where('is_published', false);
+             }
+        }
+
+        $courses = $query->paginate(12)->withQueryString();
+
+        return Inertia::render('courses/crud/index', [
+            'courses' => $courses,
+            'filters' => [
+                'search' => $request->search,
+                'status' => $request->status,
+            ],
+        ]);
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -111,10 +151,12 @@ class CourseController extends Controller
     public function edit(Course $course): Response
     {
         $course->load('tags');
+        $lessons = $course->lessons()->orderBy('order')->get();
         $tags = Tag::orderBy('name')->get();
 
         return Inertia::render('courses/edit', [
             'course' => $course,
+            'lessons' => $lessons,
             'tags' => $tags,
         ]);
     }

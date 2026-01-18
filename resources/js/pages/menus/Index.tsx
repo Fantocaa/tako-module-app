@@ -9,6 +9,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import ComboboxPermission from '@/components/ui/combobox-permission';
 import {
@@ -21,7 +22,6 @@ import {
 } from '@/components/ui/dialog';
 import IconPicker from '@/components/ui/icon-picker';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -116,6 +116,10 @@ export default function MenuIndex({
             reset();
         }
     }, [selectedMenu]);
+
+    useEffect(() => {
+        setMenus(menuItems);
+    }, [menuItems]);
 
     const handleOpen = (menu: MenuItem | null = null) => {
         setSelectedMenu(menu);

@@ -36,7 +36,7 @@ export function UserMenu() {
           </MenuHeader>
         </MenuSection>
 
-        <MenuItem href="#dashboard">
+        <MenuItem href="/dashboard">
           <Squares2X2Icon />
           Dashboard
         </MenuItem>
@@ -44,7 +44,7 @@ export function UserMenu() {
           <Cog6ToothIcon />
           Settings
         </MenuItem>
-        <MenuItem href="#security">
+        {/* <MenuItem href="#security">
           <ShieldCheckIcon />
           Security
         </MenuItem>
@@ -52,12 +52,12 @@ export function UserMenu() {
         <MenuItem>
           <CommandLineIcon />
           Command Menu
-        </MenuItem>
-
+        </MenuItem> */}
+{/* 
         <MenuItem href="#contact">
           <LifebuoyIcon />
           Customer Support
-        </MenuItem>
+        </MenuItem> */}
         <MenuSeparator />
         <MenuItem href="#logout">
           <ArrowRightOnRectangleIcon />

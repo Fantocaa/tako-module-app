@@ -24,10 +24,13 @@ class UpdateLessonRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'content_type' => ['required', 'in:video,article'],
-            'video_url' => ['required_if:content_type,video', 'nullable', 'string', 'max:500'],
+            'video_url' => ['nullable', 'string', 'url', 'max:500'],
+            'video_file' => ['nullable', 'file', 'mimes:mp4,webm', 'max:102400'],
             'content' => ['required_if:content_type,article', 'nullable', 'string'],
             'duration' => ['nullable', 'integer', 'min:0'],
             'order' => ['nullable', 'integer', 'min:0'],
+            'is_published' => ['boolean'],
+            'is_preview' => ['boolean'],
         ];
     }
 }

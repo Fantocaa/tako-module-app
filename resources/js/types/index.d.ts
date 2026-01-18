@@ -96,9 +96,12 @@ export interface Lesson {
     title: string;
     content_type: 'video' | 'article';
     video_url: string | null;
+    video_path: string | null;
     content: string | null;
     duration: number | null;
     order: number;
+    is_published: boolean;
+    is_preview: boolean;
     created_at: string;
     updated_at: string;
 }

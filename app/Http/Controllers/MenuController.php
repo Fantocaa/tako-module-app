@@ -42,13 +42,13 @@ class MenuController extends Controller
      */
     public function create()
     {
-        $menus = Menu::orderBy('title')->get();
-        $permissions = Permission::orderBy('name')->pluck('name');
+        // $menus = Menu::orderBy('title')->get();
+        // $permissions = Permission::orderBy('name')->pluck('name');
 
-        return Inertia::render('menus/Form', [
-            'parentMenus' => $menus,
-            'permissions' => $permissions,
-        ]);
+        // return Inertia::render('menus/Form', [
+        //     'parentMenus' => $menus,
+        //     'permissions' => $permissions,
+        // ]);
     }
 
     /**
@@ -87,14 +87,14 @@ class MenuController extends Controller
      */
     public function edit(Menu $menu)
     {
-        $menus = Menu::where('id', '!=', $menu->id)->orderBy('title')->get();
-        $permissions = Permission::orderBy('name')->pluck('name');
+        // $menus = Menu::where('id', '!=', $menu->id)->orderBy('title')->get();
+        // $permissions = Permission::orderBy('name')->pluck('name');
 
-        return Inertia::render('menus/Form', [
-            'menu' => $menu,
-            'parentMenus' => $menus,
-            'permissions' => $permissions,
-        ]);
+        // return Inertia::render('menus/Form', [
+        //     'menu' => $menu,
+        //     'parentMenus' => $menus,
+        //     'permissions' => $permissions,
+        // ]);
     }
 
     /**

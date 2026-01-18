@@ -26,7 +26,7 @@ export function CourseCard({ course }: CourseCardProps) {
 
     return (
         <Link href={`/courses/${course.slug}`}>
-            <Card className="group overflow-hidden border-border/40 bg-card/50 backdrop-blur transition-all hover:border-border hover:bg-card/80 hover:shadow-lg">
+            <Card className="group flex h-full flex-col overflow-hidden border-border/40 bg-card/50 backdrop-blur transition-all hover:border-border hover:bg-card/80 hover:shadow-lg">
                 {/* <div className="relative aspect-video overflow-hidden bg-muted">
                     {course.thumbnail ? (
                         <img
@@ -41,7 +41,6 @@ export function CourseCard({ course }: CourseCardProps) {
                     )}
                 </div> */}
                 <CardHeader className="space-y-2">
-                    
                     <CardTitle className="line-clamp-2 text-lg group-hover:text-primary">
                         {course.title}
                     </CardTitle>
@@ -49,7 +48,7 @@ export function CourseCard({ course }: CourseCardProps) {
                         {course.description}
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="flex items-center gap-4 text-sm text-muted-foreground">
+                <CardContent className="mt-auto flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1.5">
                         <PlayCircle className="h-4 w-4" />
                         <span>{course.lesson_count || 0} pelajaran</span>

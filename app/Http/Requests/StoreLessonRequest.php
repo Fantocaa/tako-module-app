@@ -24,7 +24,16 @@ class StoreLessonRequest extends FormRequest
         return [
             'title' => ['required', 'string', 'max:255'],
             'content_type' => ['required', 'in:video,article'],
-            'video_url' => ['required_if:content_type,video', 'nullable', 'string', 'max:500'],
+            'video_url' => ['nullable', 'string', 'max:500', 'required_without:video_file'], // Rule is complicated because of existing file case? 
+            // Actually for Store: required_without:video_file if content_type is video.
+            // But 'required_if' only checks one field.
+            // Let's use more expressive logic or a closure?
+            // Simple approach: nullable, but we validate manually or use complex rule.
+            // 'video_url' => ['nullable', 'required_if:content_type,video', ...] -> this forces URL even if file is there.
+            
+            // Correct logic:
+            'video_url' => ['nullable', 'string', 'url', 'max:500'],
+            'video_file' => ['nullable', 'file', 'mimes:mp4,webm', 'max:102400'], // 100MB
             'content' => ['required_if:content_type,article', 'nullable', 'string'],
             'duration' => ['nullable', 'integer', 'min:0'],
             'order' => ['nullable', 'integer', 'min:0'],

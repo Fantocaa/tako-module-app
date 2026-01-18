@@ -1,10 +1,10 @@
 import AppNavbar from '@/components/app-navbar';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
-import { Button } from '@/components/ui/intent-button';
 import { Separator } from '@/components/ui/separator';
 import type { Course } from '@/types';
-import { router, usePage } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 import { Clock, Edit, PlayCircle, Trash2 } from 'lucide-react';
 
 interface CourseShowProps {
@@ -41,6 +41,7 @@ export default function CourseShow({ course }: CourseShowProps) {
 
     return (
         <>
+            <Head title={course.title} />
             <Container className="py-6 sm:py-12">
                 <AppNavbar />
             </Container>
@@ -72,7 +73,7 @@ export default function CourseShow({ course }: CourseShowProps) {
                     {lessons.length > 0 && (
                         <Button
                             className="gap-2"
-                            intent="primary"
+                            variant="default"
                             onClick={handleStartLearning}
                         >
                             <PlayCircle className="h-4 w-4" />
@@ -82,7 +83,7 @@ export default function CourseShow({ course }: CourseShowProps) {
                     {isOwner && (
                         <>
                             <Button
-                                intent="outline"
+                                variant="outline"
                                 className="gap-2"
                                 onClick={() =>
                                     router.visit(`/courses/${course.slug}/edit`)
@@ -92,7 +93,7 @@ export default function CourseShow({ course }: CourseShowProps) {
                                 Edit Course
                             </Button>
                             <Button
-                                intent="outline"
+                                variant="outline"
                                 className="gap-2"
                                 onClick={handleDelete}
                             >
@@ -111,9 +112,9 @@ export default function CourseShow({ course }: CourseShowProps) {
                         <h2 className="text-xl font-semibold">
                             {lessons.length} episodes siap untuk dipelajari.
                         </h2>
-                        {isOwner && (
+                        {/* {isOwner && (
                             <Button
-                                intent="outline"
+                                variant="outline"
                                 size="sm"
                                 onClick={() =>
                                     router.visit(
@@ -123,7 +124,7 @@ export default function CourseShow({ course }: CourseShowProps) {
                             >
                                 Add Lesson
                             </Button>
-                        )}
+                        )} */}
                     </div>
 
                     {lessons.length > 0 ? (
@@ -162,7 +163,7 @@ export default function CourseShow({ course }: CourseShowProps) {
                             </p>
                             {isOwner && (
                                 <Button
-                                    intent="primary"
+                                    variant="default"
                                     className="mt-4"
                                     onClick={() =>
                                         router.visit(
