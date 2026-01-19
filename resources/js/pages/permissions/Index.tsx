@@ -9,6 +9,7 @@ import {
     AlertDialogTitle,
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
     Dialog,
@@ -18,7 +19,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -66,12 +66,21 @@ export default function PermissionIndex({
     const [editingPermission, setEditingPermission] =
         useState<Permission | null>(null);
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors } =
-        useForm({
-            name: '',
-            group: '',
-            newGroup: '',
-        });
+    const {
+        data,
+        setData,
+        post,
+        put,
+        processing,
+        errors,
+        reset,
+        clearErrors,
+        transform,
+    } = useForm({
+        name: '',
+        group: '',
+        newGroup: '',
+    });
 
     const handleDelete = (id: number) => {
         router.delete(`/permissions/${id}`, {
@@ -120,15 +129,14 @@ export default function PermissionIndex({
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        const payload = {
-            name: data.name,
+        transform((data) => ({
+            ...data,
             group:
                 data.newGroup.trim() !== '' ? data.newGroup.trim() : data.group,
-        };
+        }));
 
         if (editingPermission) {
             put(`/permissions/${editingPermission.id}`, {
-                ...payload,
                 onSuccess: () => {
                     setIsDialogOpen(false);
                     toast.success('Permission updated successfully');
@@ -136,7 +144,6 @@ export default function PermissionIndex({
             });
         } else {
             post('/permissions', {
-                ...payload,
                 onSuccess: () => {
                     setIsDialogOpen(false);
                     toast.success('Permission created successfully');

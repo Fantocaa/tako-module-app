@@ -58,12 +58,12 @@ class PermissionController extends Controller
 
     public function edit(Permission $permission)
     {
-        $groups = Permission::select('group')->distinct()->pluck('group')->filter()->values();
+        // $groups = Permission::select('group')->distinct()->pluck('group')->filter()->values();
 
-        return Inertia::render('permissions/Form', [
-            'permission' => $permission,
-            'groups' => $groups,
-        ]);
+        // return Inertia::render('permissions/Form', [
+        //     'permission' => $permission,
+        //     'groups' => $groups,
+        // ]);
     }
 
     public function update(Request $request, Permission $permission)

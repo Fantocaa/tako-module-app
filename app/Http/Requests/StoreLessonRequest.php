@@ -37,6 +37,8 @@ class StoreLessonRequest extends FormRequest
             'content' => ['required_if:content_type,article', 'nullable', 'string'],
             'duration' => ['nullable', 'integer', 'min:0'],
             'order' => ['nullable', 'integer', 'min:0'],
+            'is_published' => ['boolean'],
+            'is_preview' => ['boolean'],
         ];
     }
 }

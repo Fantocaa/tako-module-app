@@ -10,6 +10,8 @@ import {
 } from '@/components/ui/select';
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { Switch } from './ui/switch';
+import { Textarea } from './ui/textarea';
 
 interface LessonFormProps {
     course: any;
@@ -34,6 +36,8 @@ export default function LessonForm({
         content: lesson?.content || '',
         duration: lesson?.duration || 0,
         order: lesson?.order || '',
+        is_published: lesson?.is_published ?? false,
+        is_preview: lesson?.is_preview ?? false,
     });
 
     const [videoSource, setVideoSource] = useState<'url' | 'file'>(
@@ -68,128 +72,130 @@ export default function LessonForm({
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                    id="title"
-                    value={data.title}
-                    onChange={(e) => setData('title', e.target.value)}
-                    placeholder="e.g. Introduction to Routing"
-                    required
-                />
-                {errors.title && (
-                    <p className="text-sm text-destructive">{errors.title}</p>
-                )}
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="content_type">Content Type</Label>
-                <Select
-                    value={data.content_type}
-                    onValueChange={(value) =>
-                        setData('content_type', value as any)
-                    }
-                >
-                    <SelectTrigger id="content_type">
-                        <SelectValue placeholder="Select type" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="video">Video</SelectItem>
-                        <SelectItem value="article">Article</SelectItem>
-                    </SelectContent>
-                </Select>
-                {errors.content_type && (
-                    <p className="text-sm text-destructive">
-                        {errors.content_type}
-                    </p>
-                )}
-            </div>
-
-            {data.content_type === 'video' ? (
-                <>
-                    <div className="space-y-3 rounded-md border p-4">
-                        <Label>Video Source</Label>
-                        <div className="flex items-center gap-4">
-                            <label className="flex cursor-pointer items-center gap-2 text-sm">
-                                <input
-                                    type="radio"
-                                    name="video_source"
-                                    value="url"
-                                    checked={videoSource === 'url'}
-                                    onChange={() => {
-                                        setVideoSource('url');
-                                        setData('video_file', null);
-                                    }}
-                                    className="accent-primary"
-                                />
-                                External URL (YouTube)
-                            </label>
-                            <label className="flex cursor-pointer items-center gap-2 text-sm">
-                                <input
-                                    type="radio"
-                                    name="video_source"
-                                    value="file"
-                                    checked={videoSource === 'file'}
-                                    onChange={() => {
-                                        setVideoSource('file');
-                                        setData('video_url', '');
-                                    }}
-                                    className="accent-primary"
-                                />
-                                Upload File
-                            </label>
-                        </div>
-                    </div>
-
-                    {videoSource === 'url' ? (
-                        <div className="space-y-2">
-                            <Label htmlFor="video_url">Video URL</Label>
-                            <Input
-                                id="video_url"
-                                value={data.video_url}
-                                onChange={(e) =>
-                                    setData('video_url', e.target.value)
-                                }
-                                placeholder="https://www.youtube.com/watch?v=..."
-                            />
-                            {errors.video_url && (
-                                <p className="text-sm text-destructive">
-                                    {errors.video_url}
-                                </p>
-                            )}
-                        </div>
-                    ) : (
-                        <div className="space-y-2">
-                            <Label htmlFor="video_file">
-                                Upload Video (MP4)
-                            </Label>
-                            <Input
-                                id="video_file"
-                                type="file"
-                                accept="video/mp4,video/webm"
-                                onChange={(e) =>
-                                    setData(
-                                        'video_file',
-                                        e.target.files
-                                            ? e.target.files[0]
-                                            : null,
-                                    )
-                                }
-                            />
-                            {lesson?.video_path && !data.video_file && (
-                                <p className="text-xs text-muted-foreground">
-                                    Current file: {lesson.video_path}
-                                </p>
-                            )}
-                            {errors.video_file && (
-                                <p className="text-sm text-destructive">
-                                    {errors.video_file}
-                                </p>
-                            )}
-                        </div>
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                        id="title"
+                        value={data.title}
+                        onChange={(e) => setData('title', e.target.value)}
+                        placeholder="e.g. Introduction to Routing"
+                        required
+                    />
+                    {errors.title && (
+                        <p className="text-sm text-destructive">
+                            {errors.title}
+                        </p>
                     )}
-                </>
-            ) : null}
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="content_type">Content Type</Label>
+                    <Select
+                        value={data.content_type}
+                        onValueChange={(value) =>
+                            setData('content_type', value as any)
+                        }
+                    >
+                        <SelectTrigger id="content_type">
+                            <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="video">Video</SelectItem>
+                            <SelectItem value="article">Article</SelectItem>
+                        </SelectContent>
+                    </Select>
+                    {errors.content_type && (
+                        <p className="text-sm text-destructive">
+                            {errors.content_type}
+                        </p>
+                    )}
+                </div>
+                {data.content_type === 'video' ? (
+                    <>
+                        <div className="space-y-3 rounded-md border p-4">
+                            <Label>Video Source</Label>
+                            <div className="flex items-center gap-4">
+                                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                                    <input
+                                        type="radio"
+                                        name="video_source"
+                                        value="url"
+                                        checked={videoSource === 'url'}
+                                        onChange={() => {
+                                            setVideoSource('url');
+                                            setData('video_file', null);
+                                        }}
+                                        className="accent-primary"
+                                    />
+                                    External URL (YouTube)
+                                </label>
+                                <label className="flex cursor-pointer items-center gap-2 text-sm">
+                                    <input
+                                        type="radio"
+                                        name="video_source"
+                                        value="file"
+                                        checked={videoSource === 'file'}
+                                        onChange={() => {
+                                            setVideoSource('file');
+                                            setData('video_url', '');
+                                        }}
+                                        className="accent-primary"
+                                    />
+                                    Upload File
+                                </label>
+                            </div>
+                        </div>
+
+                        {videoSource === 'url' ? (
+                            <div className="space-y-2">
+                                <Label htmlFor="video_url">Video URL</Label>
+                                <Input
+                                    id="video_url"
+                                    value={data.video_url}
+                                    onChange={(e) =>
+                                        setData('video_url', e.target.value)
+                                    }
+                                    placeholder="https://www.youtube.com/watch?v=..."
+                                />
+                                {errors.video_url && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.video_url}
+                                    </p>
+                                )}
+                            </div>
+                        ) : (
+                            <div className="space-y-2">
+                                <Label htmlFor="video_file">
+                                    Upload Video (MP4)
+                                </Label>
+                                <Input
+                                    id="video_file"
+                                    type="file"
+                                    accept="video/mp4,video/webm"
+                                    onChange={(e) =>
+                                        setData(
+                                            'video_file',
+                                            e.target.files
+                                                ? e.target.files[0]
+                                                : null,
+                                        )
+                                    }
+                                />
+                                {lesson?.video_path && !data.video_file && (
+                                    <p className="text-xs text-muted-foreground">
+                                        Current file: {lesson.video_path}
+                                    </p>
+                                )}
+                                {errors.video_file && (
+                                    <p className="text-sm text-destructive">
+                                        {errors.video_file}
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                    </>
+                ) : null}
+            </div>
 
             <div className="space-y-2">
                 <Label htmlFor="content">
@@ -197,7 +203,7 @@ export default function LessonForm({
                         ? 'Description (Optional)'
                         : 'Article Content'}
                 </Label>
-                <textarea
+                <Textarea
                     id="content"
                     className="flex min-h-[200px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
                     value={data.content}
@@ -244,11 +250,41 @@ export default function LessonForm({
                         onChange={(e) => setData('order', e.target.value)}
                         placeholder="Automatic if empty"
                     />
-                    {errors.order && (
-                        <p className="text-sm text-destructive">
-                            {errors.order}
-                        </p>
-                    )}
+                </div>
+                {errors.order && (
+                    <p className="text-sm text-destructive">{errors.order}</p>
+                )}
+            </div>
+
+            <div className="flex flex-col gap-4 sm:flex-row">
+                <div className="flex items-center space-x-2">
+                    <Switch
+                        id="is_published"
+                        checked={data.is_published}
+                        onCheckedChange={(checked) => {
+                            setData({
+                                ...data,
+                                is_published: checked,
+                                is_preview: !checked,
+                            });
+                        }}
+                    />
+                    <Label htmlFor="is_published">Published</Label>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                    <Switch
+                        id="is_preview"
+                        checked={data.is_preview}
+                        onCheckedChange={(checked) => {
+                            setData({
+                                ...data,
+                                is_preview: checked,
+                                is_published: !checked,
+                            });
+                        }}
+                    />
+                    <Label htmlFor="is_preview">Free Preview</Label>
                 </div>
             </div>
 

@@ -10,10 +10,10 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -169,8 +169,8 @@ export default function RoleIndex({ roles, groupedPermissions }: Props) {
                     )}
 
                     {roles.map((role) => (
-                        <Card key={role.id} className="border shadow-sm">
-                            <CardHeader className="space-y-2 border-b bg-muted/40 md:flex-row md:items-center md:justify-between md:space-y-0">
+                        <Card key={role.id} className="border pt-0 shadow-sm">
+                            <CardHeader className="space-y-2 border-b bg-muted/40 pt-6 pb-6 md:flex-row md:items-center md:justify-between md:space-y-0">
                                 <div className="space-y-1">
                                     <CardTitle className="flex items-center gap-2 text-base font-semibold">
                                         <ShieldCheck className="h-4 w-4 text-primary" />
@@ -230,7 +230,7 @@ export default function RoleIndex({ roles, groupedPermissions }: Props) {
                             </CardHeader>
 
                             {role.permissions.length > 0 && (
-                                <CardContent className="pt-4">
+                                <CardContent className="">
                                     <p className="mb-2 text-sm font-medium text-muted-foreground">
                                         Permissions:
                                     </p>

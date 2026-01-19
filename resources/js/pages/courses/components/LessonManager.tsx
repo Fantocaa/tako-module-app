@@ -41,7 +41,11 @@ export default function LessonManager({
     const [isSaving, setIsSaving] = useState(false);
 
     const sensors = useSensors(
-        useSensor(PointerSensor),
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
         useSensor(KeyboardSensor),
     );
 
@@ -51,10 +55,10 @@ export default function LessonManager({
         if (active.id !== over?.id) {
             setLessons((items) => {
                 const oldIndex = items.findIndex(
-                    (item) => item.id === active.id,
+                    (item) => item.id.toString() === active.id.toString(),
                 );
                 const newIndex = items.findIndex(
-                    (item) => item.id === over?.id,
+                    (item) => item.id.toString() === over?.id.toString(),
                 );
                 const newItems = arrayMove(items, oldIndex, newIndex);
                 return newItems;
@@ -141,7 +145,7 @@ export default function LessonManager({
                         onDragEnd={handleDragEnd}
                     >
                         <SortableContext
-                            items={lessons.map((l) => l.id)}
+                            items={lessons.map((l) => l.id.toString())}
                             strategy={verticalListSortingStrategy}
                         >
                             <div className="space-y-3">
@@ -156,7 +160,7 @@ export default function LessonManager({
                                                     <div className="font-medium">
                                                         {lesson.title}
                                                     </div>
-                                                    <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                                    <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
                                                         <span className="flex items-center gap-1">
                                                             <Clock className="h-3 w-3" />
                                                             {lesson.duration}{' '}

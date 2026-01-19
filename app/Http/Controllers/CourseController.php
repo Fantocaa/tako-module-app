@@ -59,10 +59,8 @@ class CourseController extends Controller
     {
         $query = Course::query()
             ->with(['instructor'])
-            ->when(!auth()->user()->hasRole('Super Admin'), function ($q) {
-                // If not super admin, only show own courses? Or maybe all for now depending on requirements.
-                // For now, let's show all but maybe unrelated to role for specific restrictions.
-                // If strict: $q->where('instructor_id', auth()->id());
+            ->when(!$request->user()->hasRole('Admin'), function ($q) {
+                // $q->where('instructor_id', $request->user()->id);
             })
             ->latest();
 
@@ -86,7 +84,7 @@ class CourseController extends Controller
 
         $courses = $query->paginate(12)->withQueryString();
 
-        return Inertia::render('courses/crud/index', [
+        return Inertia::render('courses/index-crud', [
             'courses' => $courses,
             'filters' => [
                 'search' => $request->search,
