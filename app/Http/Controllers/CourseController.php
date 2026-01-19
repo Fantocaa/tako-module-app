@@ -136,7 +136,9 @@ class CourseController extends Controller
      */
     public function show(Course $course): Response
     {
-        $course->load(['lessons', 'tags', 'instructor']);
+        $course->load(['lessons' => function ($query) {
+            $query->where('is_published', true)->orderBy('order');
+        }, 'tags', 'instructor']);
 
         return Inertia::render('courses/[slug]', [
             'course' => $course,

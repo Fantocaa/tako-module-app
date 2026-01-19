@@ -22,8 +22,6 @@ const breadcrumbs: BreadcrumbItem[] = [
 ];
 
 export default function EditCourse({ course, tags, lessons }: EditCourseProps) {
-    console.log(lessons);
-
     return (
         <>
             <AppLayout breadcrumbs={breadcrumbs}>

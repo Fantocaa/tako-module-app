@@ -153,6 +153,7 @@ export default function LessonManager({
                                     <SortableLessonItem
                                         key={lesson.id}
                                         id={lesson.id.toString()}
+                                        isLocked={!lesson.is_preview}
                                     >
                                         <div className="flex items-center justify-between gap-4">
                                             <div className="flex items-center gap-4">

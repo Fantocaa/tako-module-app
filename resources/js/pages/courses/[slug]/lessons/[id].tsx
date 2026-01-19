@@ -32,6 +32,13 @@ function formatDuration(seconds: number | null) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
+function getYouTubeId(url: string) {
+    const regExp =
+        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+}
+
 export default function LessonShow({
     course,
     lesson,
@@ -53,36 +60,41 @@ export default function LessonShow({
                     {/* Main Content */}
                     <div className="flex flex-1 flex-col overflow-hidden rounded-2xl">
                         {/* Content Area - Video or Article */}
-                        {lesson.content_type === 'video' &&
-                        (lesson.video_url || lesson.video_path) ? (
-                            <MediaPlayer
-                                className="aspect-video w-full"
-                                autoHide
-                                label={lesson.title}
-                            >
-                                <MediaPlayerVideo
-                                    src={
-                                        lesson.video_path
-                                            ? `/storage/${lesson.video_path}`
-                                            : lesson.video_url!
-                                    }
-                                />
-                                <MediaPlayerControlsOverlay />
-                                <MediaPlayerControls>
-                                    <MediaPlayerPlay />
-                                    <MediaPlayerSeek />
-                                    <MediaPlayerTime />
-                                    <MediaPlayerVolume />
-                                    <MediaPlayerFullscreen />
-                                </MediaPlayerControls>
-                            </MediaPlayer>
+                        {/* Content Area - Video or Article */}
+                        {lesson.content_type === 'video' ? (
+                            lesson.video_path ? (
+                                <MediaPlayer
+                                    className="aspect-video w-full"
+                                    autoHide
+                                    label={lesson.title}
+                                >
+                                    <MediaPlayerVideo
+                                        src={`/storage/${lesson.video_path}`}
+                                    />
+                                    <MediaPlayerControlsOverlay />
+                                    <MediaPlayerControls>
+                                        <MediaPlayerPlay />
+                                        <MediaPlayerSeek />
+                                        <MediaPlayerTime />
+                                        <MediaPlayerVolume />
+                                        <MediaPlayerFullscreen />
+                                    </MediaPlayerControls>
+                                </MediaPlayer>
+                            ) : lesson.video_url &&
+                              getYouTubeId(lesson.video_url) ? (
+                                <div className="aspect-video w-full overflow-hidden rounded-xl bg-black shadow-lg">
+                                    <iframe
+                                        className="h-full w-full"
+                                        src={`https://www.youtube.com/embed/${getYouTubeId(
+                                            lesson.video_url,
+                                        )}`}
+                                        title={lesson.title}
+                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                        allowFullScreen
+                                    ></iframe>
+                                </div>
+                            ) : null
                         ) : (
-                            // <div className="bg-muted aspect-video w-full flex items-center justify-center">
-                            //     <p className="text-muted-foreground">
-                            //         Konten artikel - scroll ke bawah untuk
-                            //         membaca
-                            //     </p>
-                            // </div>
                             <div></div>
                         )}
 

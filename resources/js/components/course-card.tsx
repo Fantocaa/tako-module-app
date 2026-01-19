@@ -1,7 +1,6 @@
 import type { Course } from '@/types';
 import { Link } from '@inertiajs/react';
 import { Clock, PlayCircle } from 'lucide-react';
-import { Badge } from './ui/badge';
 import {
     Card,
     CardContent,
@@ -27,19 +26,6 @@ export function CourseCard({ course }: CourseCardProps) {
     return (
         <Link href={`/courses/${course.slug}`}>
             <Card className="group flex h-full flex-col overflow-hidden border-border/40 bg-card/50 backdrop-blur transition-all hover:border-border hover:bg-card/80 hover:shadow-lg">
-                {/* <div className="relative aspect-video overflow-hidden bg-muted">
-                    {course.thumbnail ? (
-                        <img
-                            src={course.thumbnail}
-                            alt={course.title}
-                            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                        />
-                    ) : (
-                        <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-                            <PlayCircle className="h-16 w-16 text-primary/40" />
-                        </div>
-                    )}
-                </div> */}
                 <CardHeader className="space-y-2">
                     <CardTitle className="line-clamp-2 text-lg group-hover:text-primary">
                         {course.title}
@@ -61,13 +47,16 @@ export function CourseCard({ course }: CourseCardProps) {
                 <CardFooter>
                     <div className="flex flex-wrap gap-1.5">
                         {course.tags?.map((tag) => (
-                            <Badge
+                            <span
                                 key={tag.id}
-                                variant="secondary"
-                                className="text-xs font-medium"
+                                className="rounded-xl px-2 py-0.5 text-xs font-medium"
+                                style={{
+                                    color: tag.color || '#000000',
+                                    backgroundColor: `color-mix(in srgb, ${tag.color || '#000000'}, transparent 80%)`,
+                                }}
                             >
                                 {tag.name}
-                            </Badge>
+                            </span>
                         ))}
                     </div>
                 </CardFooter>

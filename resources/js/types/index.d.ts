@@ -72,6 +72,7 @@ export interface Tag {
     id: number;
     name: string;
     slug: string;
+    color?: string | null;
 }
 
 export interface Course {

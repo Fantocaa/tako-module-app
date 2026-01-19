@@ -69,7 +69,9 @@ class LessonController extends Controller
      */
     public function show(Course $course, Lesson $lesson): Response
     {
-        $course->load(['lessons', 'tags', 'instructor']);
+         $course->load(['lessons' => function ($query) {
+            $query->where('is_published', true)->orderBy('order');
+        }, 'tags', 'instructor']);
         
         $lessons = $course->lessons;
         $currentIndex = $lessons->search(fn($l) => $l->id === $lesson->id);

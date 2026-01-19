@@ -95,16 +95,25 @@ export default function CoursesIndex({
                         Semua
                     </Badge>
                     {tags.map((tag) => (
-                        <Badge
+                        <span
                             key={tag.id}
-                            variant={
-                                selectedTag === tag.slug ? 'default' : 'outline'
-                            }
-                            className="cursor-pointer px-4 py-1.5 text-sm transition-colors"
+                            className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:opacity-80 ${
+                                selectedTag === tag.slug
+                                    ? 'ring-2 ring-offset-1'
+                                    : ''
+                            }`}
+                            style={{
+                                borderColor: tag.color || '#000000',
+                                color: tag.color || '#000000',
+                                backgroundColor: `color-mix(in srgb, ${tag.color || '#000000'}, transparent 80%)`,
+                                // @ts-ignore
+                                '--tw-ring-color':
+                                    tag.color + '80' || '#000000',
+                            }}
                             onClick={() => setSelectedTag(tag.slug)}
                         >
                             {tag.name}
-                        </Badge>
+                        </span>
                     ))}
                 </div>
 
