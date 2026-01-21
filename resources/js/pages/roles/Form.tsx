@@ -15,31 +15,23 @@ interface Permission {
     group: string;
 }
 
-interface Course {
-    id: number;
-    title: string;
-}
-
 interface Role {
     id?: number;
     name: string;
     permissions?: Permission[];
-    courses?: Course[];
 }
 
 interface Props {
     role?: Role;
     groupedPermissions: Record<string, Permission[]>;
-    courses: Course[];
 }
 
-export default function RoleForm({ role, groupedPermissions, courses }: Props) {
+export default function RoleForm({ role, groupedPermissions }: Props) {
     const isEdit = !!role;
 
     const { data, setData, post, put, processing, errors } = useForm({
         name: role?.name || '',
         permissions: role?.permissions?.map((p) => p.name) || [],
-        courses: role?.courses?.map((c) => c.id) || [],
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -81,22 +73,6 @@ export default function RoleForm({ role, groupedPermissions, courses }: Props) {
             });
             setData('permissions', newPermissions);
         }
-    };
-
-    const toggleCourse = (courseId: number) => {
-        setData(
-            'courses',
-            data.courses.includes(courseId)
-                ? data.courses.filter((id) => id !== courseId)
-                : [...data.courses, courseId],
-        );
-    };
-
-    const toggleAllCourses = () => {
-        const allChecked = courses.every((course) =>
-            data.courses.includes(course.id),
-        );
-        setData('courses', allChecked ? [] : courses.map((c) => c.id));
     };
 
     return (
@@ -229,69 +205,6 @@ export default function RoleForm({ role, groupedPermissions, courses }: Props) {
                                                 );
                                             },
                                         )}
-                                    </div>
-                                </div>
-
-                                <Separator />
-
-                                <div className="space-y-6">
-                                    <div>
-                                        <h2 className="text-lg font-semibold">
-                                            Course Access
-                                        </h2>
-                                        <p className="text-sm text-muted-foreground">
-                                            Select which courses users with this
-                                            role can access
-                                        </p>
-                                    </div>
-
-                                    <div className="rounded-lg border bg-muted/20 p-4">
-                                        <div className="mb-3 flex items-center gap-3">
-                                            <Checkbox
-                                                id="all-courses"
-                                                checked={courses.every(
-                                                    (course) =>
-                                                        data.courses.includes(
-                                                            course.id,
-                                                        ),
-                                                )}
-                                                onCheckedChange={
-                                                    toggleAllCourses
-                                                }
-                                            />
-                                            <label
-                                                htmlFor="all-courses"
-                                                className="cursor-pointer text-sm font-medium tracking-wider text-muted-foreground uppercase"
-                                            >
-                                                All Courses
-                                            </label>
-                                        </div>
-                                        <div className="grid grid-cols-1 gap-3 pl-7 sm:grid-cols-2 md:grid-cols-3">
-                                            {courses.map((course) => (
-                                                <div
-                                                    key={course.id}
-                                                    className="flex items-center gap-3"
-                                                >
-                                                    <Checkbox
-                                                        id={`course-${course.id}`}
-                                                        checked={data.courses.includes(
-                                                            course.id,
-                                                        )}
-                                                        onCheckedChange={() =>
-                                                            toggleCourse(
-                                                                course.id,
-                                                            )
-                                                        }
-                                                    />
-                                                    <label
-                                                        htmlFor={`course-${course.id}`}
-                                                        className="cursor-pointer text-sm"
-                                                    >
-                                                        {course.title}
-                                                    </label>
-                                                </div>
-                                            ))}
-                                        </div>
                                     </div>
                                 </div>
                             </div>

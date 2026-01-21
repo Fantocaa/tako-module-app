@@ -1,6 +1,6 @@
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -20,20 +20,32 @@ interface Role {
     name: string;
 }
 
+interface Position {
+    id: number;
+    name: string;
+}
+
 interface User {
     id?: number;
     name: string;
     email: string;
     role?: string;
+    position_id?: number;
 }
 
 interface Props {
     user?: User;
     roles: Role[];
+    positions: Position[];
     currentRole?: string;
 }
 
-export default function UserForm({ user, roles, currentRole }: Props) {
+export default function UserForm({
+    user,
+    roles,
+    positions,
+    currentRole,
+}: Props) {
     const isEdit = !!user;
 
     const { data, setData, post, put, processing, errors } = useForm({
@@ -41,6 +53,7 @@ export default function UserForm({ user, roles, currentRole }: Props) {
         email: user?.email || '',
         password: '',
         role: currentRole || '',
+        position_id: user?.position_id || '',
     });
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -186,6 +199,47 @@ export default function UserForm({ user, roles, currentRole }: Props) {
                                     {errors.role && (
                                         <p className="mt-2 text-sm text-red-500">
                                             {errors.role}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Position */}
+                                <div>
+                                    <Label
+                                        htmlFor="position_id"
+                                        className="mb-2 block"
+                                    >
+                                        Position (Jabatan)
+                                    </Label>
+                                    <Select
+                                        value={data.position_id?.toString()}
+                                        onValueChange={(value) =>
+                                            setData(
+                                                'position_id',
+                                                value === 'none' ? '' : value,
+                                            )
+                                        }
+                                    >
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select position" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="none">
+                                                None
+                                            </SelectItem>
+                                            {positions.map((position) => (
+                                                <SelectItem
+                                                    key={position.id}
+                                                    value={position.id.toString()}
+                                                >
+                                                    {position.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.position_id && (
+                                        <p className="mt-2 text-sm text-red-500">
+                                            {errors.position_id}
                                         </p>
                                     )}
                                 </div>

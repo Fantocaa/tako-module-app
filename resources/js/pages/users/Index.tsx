@@ -10,6 +10,7 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
@@ -18,7 +19,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -52,12 +52,19 @@ interface Role {
     name: string;
 }
 
+interface Position {
+    id: number;
+    name: string;
+}
+
 interface User {
     id: number;
     name: string;
     email: string;
     created_at: string;
     roles: Role[];
+    position_id: number | null;
+    position: Position | null;
 }
 
 interface Props {
@@ -68,6 +75,7 @@ interface Props {
         links: { url: string | null; label: string; active: boolean }[];
     };
     roles: Role[];
+    positions: Position[];
 }
 
 function getInitials(name: string) {
@@ -78,7 +86,7 @@ function getInitials(name: string) {
         .toUpperCase();
 }
 
-export default function UserIndex({ users, roles }: Props) {
+export default function UserIndex({ users, roles, positions }: Props) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [editingUser, setEditingUser] = useState<User | null>(null);
 
@@ -88,6 +96,7 @@ export default function UserIndex({ users, roles }: Props) {
             email: '',
             password: '',
             role: '',
+            position_id: '' as string | number,
         });
 
     const handleDelete = (id: number) => {
@@ -123,6 +132,7 @@ export default function UserIndex({ users, roles }: Props) {
             email: user.email,
             password: '',
             role: user.roles[0]?.name || '',
+            position_id: user.position_id || '',
         });
         clearErrors();
         setIsDialogOpen(true);
@@ -197,6 +207,14 @@ export default function UserIndex({ users, roles }: Props) {
                                         </div>
                                         {user.roles.length > 0 && (
                                             <div className="mt-2 flex flex-wrap gap-1">
+                                                {user.position && (
+                                                    <Badge
+                                                        variant="outline"
+                                                        className="border-primary/30 text-xs font-semibold text-primary"
+                                                    >
+                                                        {user.position.name}
+                                                    </Badge>
+                                                )}
                                                 {user.roles.map((role) => (
                                                     <Badge
                                                         key={role.id}
@@ -408,6 +426,42 @@ export default function UserIndex({ users, roles }: Props) {
                             {errors.role && (
                                 <p className="text-sm text-red-500">
                                     {errors.role}
+                                </p>
+                            )}
+                        </div>
+
+                        {/* Position */}
+                        <div className="space-y-2">
+                            <Label htmlFor="position_id">
+                                Position (Jabatan)
+                            </Label>
+                            <Select
+                                value={data.position_id?.toString()}
+                                onValueChange={(value) =>
+                                    setData(
+                                        'position_id',
+                                        value === 'none' ? '' : value,
+                                    )
+                                }
+                            >
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select position" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="none">None</SelectItem>
+                                    {positions.map((position) => (
+                                        <SelectItem
+                                            key={position.id}
+                                            value={position.id.toString()}
+                                        >
+                                            {position.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.position_id && (
+                                <p className="text-sm text-red-500">
+                                    {errors.position_id}
                                 </p>
                             )}
                         </div>

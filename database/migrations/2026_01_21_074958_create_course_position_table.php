@@ -11,17 +11,17 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('course_role', function (Blueprint $table) {
+        Schema::create('course_position', function (Blueprint $table) {
             $table->id();
             $table->foreignId('course_id')
                 ->constrained('courses')
                 ->cascadeOnDelete();
-            $table->foreignId('role_id')
-                ->constrained('roles')
+            $table->foreignId('position_id')
+                ->constrained('positions')
                 ->cascadeOnDelete();
             
-            // Ensure a course can only be assigned to a role once
-            $table->unique(['course_id', 'role_id']);
+            // Ensure a course can only be assigned to a position once
+            $table->unique(['course_id', 'position_id']);
             $table->timestamps();
         });
     }
@@ -31,6 +31,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('course_role');
+        Schema::dropIfExists('course_position');
     }
 };

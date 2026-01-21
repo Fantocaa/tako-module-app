@@ -25,11 +25,16 @@ class CourseController extends Controller
             ->where(function ($q) use ($user) {
                 $q->where('is_published', true);
                 
-                // If user is not Admin, only show courses assigned to their roles
+                // If user is not Admin, only show courses assigned to their position
                 if (!$user->hasRole('Admin')) {
-                    $q->whereHas('roles', function ($roleQuery) use ($user) {
-                        $roleQuery->whereIn('roles.id', $user->roles->pluck('id'));
-                    });
+                    if ($user->position_id) {
+                        $q->whereHas('positions', function ($positionQuery) use ($user) {
+                            $positionQuery->where('positions.id', $user->position_id);
+                        });
+                    } else {
+                        // User has no position, show no courses
+                        $q->whereRaw('1 = 0');
+                    }
                 }
             });
 
@@ -66,7 +71,7 @@ class CourseController extends Controller
     public function indexCrud(Request $request): Response
     {
         $query = Course::query()
-            ->with(['instructor', 'roles'])
+            ->with(['instructor', 'positions'])
             ->when(!$request->user()->hasRole('Admin'), function ($q) {
                 // $q->where('instructor_id', $request->user()->id);
             })

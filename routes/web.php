@@ -6,6 +6,7 @@ use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LessonController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PermissionController;
+use App\Http\Controllers\PositionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TransactionController;
@@ -31,6 +32,7 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     
     Route::resource('transactions', TransactionController::class);
     Route::resource('roles', RoleController::class);
+    Route::resource('positions', PositionController::class);
     Route::resource('permissions', PermissionController::class);
     Route::resource('users', UserController::class);
     Route::put('/users/{user}/reset-password', [UserController::class, 'resetPassword'])->name('users.reset-password');
@@ -42,21 +44,27 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::get('/backup/download/{file}', [BackupController::class, 'download'])->name('backup.download');
     Route::delete('/backup/delete/{file}', [BackupController::class, 'delete'])->name('backup.delete');
     Route::resource('tags', TagController::class);
+
+    // LMS Routes
+    Route::get('/courses-index', [CourseController::class, 'indexCrud'])->name('courses.index.crud');
+    Route::post('/courses/{course}/lessons/reorder', [LessonController::class, 'reorder'])->name('courses.lessons.reorder');
+    Route::resource('courses', CourseController::class);
+    Route::resource('courses.lessons', LessonController::class);
 });
 
 // LMS Routes - accessible to all authenticated users
-Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
-    Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
-    Route::get('/courses/{course}/lessons/{lesson}', [LessonController::class, 'show'])->name('courses.lessons.show');
-});
+// Route::middleware(['auth', 'verified'])->group(function () {
+//     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
+//     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
+//     Route::get('/courses/{course}/lessons/{lesson}', [LessonController::class, 'show'])->name('courses.lessons.show');
+// });
 
-// LMS Admin Routes - requires menu permission
-Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
-    Route::get('/courses-index', [CourseController::class, 'indexCrud'])->name('courses.index.crud');
-    Route::post('/courses/{course}/lessons/reorder', [LessonController::class, 'reorder'])->name('courses.lessons.reorder');
-    Route::resource('courses', CourseController::class)->except(['index', 'show']);
-    Route::resource('courses.lessons', LessonController::class)->except(['show']);
-});
+// // LMS Admin Routes - requires menu permission
+// Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
+//     Route::get('/courses-index', [CourseController::class, 'indexCrud'])->name('courses.index.crud');
+//     Route::post('/courses/{course}/lessons/reorder', [LessonController::class, 'reorder'])->name('courses.lessons.reorder');
+//     Route::resource('courses', CourseController::class);
+//     Route::resource('courses.lessons', LessonController::class)->except(['show']);
+// });
 
 require __DIR__ . '/settings.php';

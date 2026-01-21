@@ -74,11 +74,11 @@ class Course extends Model
     }
 
     /**
-     * Get the roles that can access this course.
+     * Get the positions that have access to this course.
      */
-    public function roles(): BelongsToMany
+    public function positions(): BelongsToMany
     {
-        return $this->belongsToMany(\Spatie\Permission\Models\Role::class, 'course_role');
+        return $this->belongsToMany(Position::class, 'course_position');
     }
 
     /**
