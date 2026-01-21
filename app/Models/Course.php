@@ -74,6 +74,14 @@ class Course extends Model
     }
 
     /**
+     * Get the roles that can access this course.
+     */
+    public function roles(): BelongsToMany
+    {
+        return $this->belongsToMany(\Spatie\Permission\Models\Role::class, 'course_role');
+    }
+
+    /**
      * Get the lesson count attribute.
      */
     public function getLessonCountAttribute(): int

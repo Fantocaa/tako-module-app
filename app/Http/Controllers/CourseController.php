@@ -18,11 +18,19 @@ class CourseController extends Controller
      */
     public function index(Request $request): Response
     {
+        $user = auth()->user();
+        
         $query = Course::query()
             ->with(['tags', 'instructor'])
-            ->where(function ($q) {
-                $q->where('is_published', true)
-                  ->orWhere('instructor_id', auth()->id());
+            ->where(function ($q) use ($user) {
+                $q->where('is_published', true);
+                
+                // If user is not Admin, only show courses assigned to their roles
+                if (!$user->hasRole('Admin')) {
+                    $q->whereHas('roles', function ($roleQuery) use ($user) {
+                        $roleQuery->whereIn('roles.id', $user->roles->pluck('id'));
+                    });
+                }
             });
 
         // Filter by tag
@@ -58,7 +66,7 @@ class CourseController extends Controller
     public function indexCrud(Request $request): Response
     {
         $query = Course::query()
-            ->with(['instructor'])
+            ->with(['instructor', 'roles'])
             ->when(!$request->user()->hasRole('Admin'), function ($q) {
                 // $q->where('instructor_id', $request->user()->id);
             })

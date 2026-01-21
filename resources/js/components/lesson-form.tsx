@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/select';
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
+import { Editor } from './blocks/editor-md/editor';
 import { Switch } from './ui/switch';
-import { Textarea } from './ui/textarea';
 
 interface LessonFormProps {
     course: any;
@@ -205,18 +205,13 @@ export default function LessonForm({
                         ? 'Description (Optional)'
                         : 'Article Content'}
                 </Label>
-                <Textarea
-                    id="content"
-                    className="flex min-h-[200px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs transition-colors placeholder:text-muted-foreground focus-visible:ring-1 focus-visible:ring-ring focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50"
-                    value={data.content}
-                    onChange={(e) => setData('content', e.target.value)}
-                    placeholder={
-                        data.content_type === 'video'
-                            ? 'Video description...'
-                            : 'Write your article here (Markdown supported)...'
+                <Editor
+                    markdown={data.content}
+                    onMarkdownChange={(markdown) =>
+                        setData('content', markdown)
                     }
-                    required={data.content_type === 'article'}
                 />
+                <input type="hidden" name="content" value={data.content} />
                 {errors.content && (
                     <p className="text-sm text-destructive">{errors.content}</p>
                 )}
