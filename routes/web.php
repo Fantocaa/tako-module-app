@@ -7,6 +7,7 @@ use App\Http\Controllers\LessonController;
 use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PositionController;
+use App\Http\Controllers\PsychotestController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TransactionController;
@@ -46,11 +47,20 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::resource('tags', TagController::class);
 
     // LMS Routes
-    Route::get('/courses-index', [CourseController::class, 'indexCrud'])->name('courses.index.crud');
+    Route::get('/lms', [CourseController::class, 'indexCrud'])->name('lms.index');
     Route::post('/courses/{course}/lessons/reorder', [LessonController::class, 'reorder'])->name('courses.lessons.reorder');
     Route::resource('courses', CourseController::class);
     Route::resource('courses.lessons', LessonController::class);
+
+    // Psychotest Admin/Testing Routes
+    Route::get('/psychotest-admin', [PsychotestController::class, 'index'])->name('psychotest.index');
+    Route::post('/psychotest-admin', [PsychotestController::class, 'store'])->name('psychotest.store');
 });
+
+// Applicant Psychotest Routes (Public)
+Route::get('/p/{uuid}', [PsychotestController::class, 'testPage'])->name('psychotest.take-test');
+Route::post('/p/{uuid}/submit', [PsychotestController::class, 'submit'])->name('psychotest.submit');
+Route::get('/p/error', [PsychotestController::class, 'error'])->name('psychotest.error');
 
 // LMS Routes - accessible to all authenticated users
 // Route::middleware(['auth', 'verified'])->group(function () {
