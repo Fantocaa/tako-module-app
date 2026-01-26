@@ -55,12 +55,15 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     // Psychotest Admin/Testing Routes
     Route::get('/psychotest-admin', [PsychotestController::class, 'index'])->name('psychotest.index');
     Route::post('/psychotest-admin', [PsychotestController::class, 'store'])->name('psychotest.store');
+    Route::get('/psychotest-admin/{uuid}/report', [PsychotestController::class, 'report'])->name('psychotest.report');
+    Route::get('/psychotest-admin/{uuid}/pdf', [PsychotestController::class, 'downloadPdf'])->name('psychotest.pdf');
+    Route::post('/psychotest-admin/{uuid}/restart', [PsychotestController::class, 'restart'])->name('psychotest.restart');
 });
 
 // Applicant Psychotest Routes (Public)
+Route::get('/p/error', [PsychotestController::class, 'error'])->name('psychotest.error');
 Route::get('/p/{uuid}', [PsychotestController::class, 'testPage'])->name('psychotest.take-test');
 Route::post('/p/{uuid}/submit', [PsychotestController::class, 'submit'])->name('psychotest.submit');
-Route::get('/p/error', [PsychotestController::class, 'error'])->name('psychotest.error');
 
 // LMS Routes - accessible to all authenticated users
 // Route::middleware(['auth', 'verified'])->group(function () {

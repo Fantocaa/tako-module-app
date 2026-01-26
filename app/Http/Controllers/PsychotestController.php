@@ -8,6 +8,8 @@ use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
+use Barryvdh\DomPDF\Facade\Pdf;
+
 class PsychotestController extends Controller
 {
     /**
@@ -16,7 +18,12 @@ class PsychotestController extends Controller
     public function index()
     {
         return Inertia::render('psychotest/index', [
-            'links' => PsychotestLink::latest()->get()
+            'links' => PsychotestLink::latest()->get()->map(function($link) {
+                return array_merge($link->toArray(), [
+                    'duration' => $link->duration,
+                    'is_expired' => $link->isExpired()
+                ]);
+            })
         ]);
     }
 
@@ -59,8 +66,36 @@ class PsychotestController extends Controller
             ]);
         }
 
+        // Set started_at if it's the first time they open it
+        if (!$link->started_at) {
+            $link->update([
+                'started_at' => Carbon::now()
+            ]);
+        }
+
+        $timeLimitSeconds = PsychotestLink::SESSION_DURATION_SECONDS;
+        $elapsedSeconds = $link->started_at->diffInSeconds(Carbon::now());
+        $remainingTime = max(0, $timeLimitSeconds - $elapsedSeconds);
+
+        if ($remainingTime <= 0) {
+
+            // kunci sesi hanya sekali
+            if (!$link->finished_at) {
+                $link->update([
+                    'finished_at' => now(),
+                    'used_at' => now(),
+                ]);
+            }
+
+            return Inertia::render('psychotest/error', [
+                'message' => 'Your session time has expired.'
+            ]);
+        }
+
         return Inertia::render('psychotest/take-test', [
-            'link' => $link
+            'link' => $link,
+            'timeLimit' => $timeLimitSeconds,
+            'remainingTime' => $remainingTime
         ]);
     }
 
@@ -81,10 +116,58 @@ class PsychotestController extends Controller
 
         $link->update([
             'used_at' => Carbon::now(),
+            'finished_at' => Carbon::now(),
             'results' => $request->answers,
         ]);
 
         return Inertia::render('psychotest/success');
+    }
+
+    /**
+     * Show the psychotest report.
+     */
+    public function report($uuid)
+    {
+        $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
+
+        return Inertia::render('psychotest/Report', [
+            'link' => array_merge($link->toArray(), [
+                'duration' => $link->duration
+            ])
+        ]);
+    }
+
+    /**
+     * Download the psychotest report as PDF.
+     */
+    public function downloadPdf($uuid)
+    {
+        $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
+
+        $pdf = Pdf::loadView('pdf.psychotest-report', [
+            'link' => $link,
+            'duration' => $link->duration
+        ]);
+
+        return $pdf->download("psychotest-report-{$link->applicant_name}.pdf");
+    }
+
+    /**
+     * Restart the psychotest session for an applicant.
+     */
+    public function restart($uuid)
+    {
+        $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
+
+        $link->update([
+            'started_at' => null,
+            'finished_at' => null,
+            'used_at' => null,
+            'results' => null,
+            'expires_at' => Carbon::now()->addHours(24),
+        ]);
+
+        return redirect()->back()->with('success', 'Psychotest session restarted successfully!');
     }
 
     /**
