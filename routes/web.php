@@ -9,6 +9,7 @@ use App\Http\Controllers\MenuController;
 use App\Http\Controllers\PermissionController;
 use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PsychotestController;
+use App\Http\Controllers\PsychotestQuestionController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TransactionController;
@@ -59,6 +60,9 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::get('/psychotest-admin/{uuid}/report', [PsychotestController::class, 'report'])->name('psychotest.report');
     Route::get('/psychotest-admin/{uuid}/pdf', [PsychotestController::class, 'downloadPdf'])->name('psychotest.pdf');
     Route::post('/psychotest-admin/{uuid}/restart', [PsychotestController::class, 'restart'])->name('psychotest.restart');
+    
+    // Psychotest Questions CRUD
+    Route::resource('psychotest-questions', PsychotestQuestionController::class);
 });
 
 // Applicant Psychotest Routes (Public)

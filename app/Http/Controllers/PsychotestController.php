@@ -72,7 +72,7 @@ class PsychotestController extends Controller
     /**
      * The actual psychotest page for the applicant.
      */
-    public function testPage($uuid)
+    public function testPage(Request $request, $uuid)
     {
         $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
 
@@ -81,43 +81,62 @@ class PsychotestController extends Controller
                 'message' => 'This link has expired.'
             ]);
         }
-
-        if ($link->isUsed()) {
-            return Inertia::render('psychotest/error', [
-                'message' => 'This test has already been completed.'
+        
+        // Session Hub
+        if (!$request->has('session')) {
+            return Inertia::render('psychotest/hub', [
+                'link' => $link,
+                'currentSession' => $link->last_completed_session
             ]);
         }
 
-        // Set started_at if it's the first time they open it
+        // Specific Session
+        $session = (int) $request->session;
+        
+        // Check if session is unlocked
+        if ($session > $link->last_completed_session + 1) {
+            return redirect()->route('psychotest.take-test', $uuid)
+                ->with('error', 'Please complete previous sessions first.');
+        }
+
+        // Check if session is already done
+        if ($session <= $link->last_completed_session) {
+             return redirect()->route('psychotest.take-test', $uuid)
+                ->with('error', 'Session already completed.');
+        }
+
+        // Set started_at if it's the first time strictly (global start)
         if (!$link->started_at) {
             $link->update([
                 'started_at' => Carbon::now()
             ]);
         }
-
-        $timeLimitSeconds = PsychotestLink::SESSION_DURATION_SECONDS;
-        $elapsedSeconds = $link->started_at->diffInSeconds(Carbon::now());
-        $remainingTime = max(0, $timeLimitSeconds - $elapsedSeconds);
-
-        if ($remainingTime <= 0) {
-
-            // kunci sesi hanya sekali
-            if (!$link->finished_at) {
-                $link->update([
-                    'finished_at' => now(),
-                    'used_at' => now(),
-                ]);
-            }
-
-            return Inertia::render('psychotest/error', [
-                'message' => 'Your session time has expired.'
-            ]);
-        }
+        
+        // Fetch questions for this session
+        $questions = \App\Models\PsychotestQuestion::where('session_number', $session)
+            ->orderBy('section_number')
+            ->orderBy('question_number')
+            ->get();
+            
+        // Map questions to the format expected by frontend (if needed, or adjust frontend)
+        // Adjusting frontend to match DB structure is better.
+        
+        // For time limit, we might want per-session limits. 
+        // For now using global or hardcoded per session.
+        $timeLimits = [
+            1 => 60 * 60, // 60 mins for Papi
+            2 => 30 * 60, // 30 mins for CFIT
+            3 => 20 * 60, // 20 mins for DISC
+        ];
+        
+        $sessionTimeLimit = $timeLimits[$session] ?? 600;
 
         return Inertia::render('psychotest/take-test', [
             'link' => $link,
-            'timeLimit' => $timeLimitSeconds,
-            'remainingTime' => $remainingTime
+            'session' => $session,
+            'questions' => $questions,
+            'timeLimit' => $sessionTimeLimit,
+            'remainingTime' => $sessionTimeLimit // Simplified for now, ideally track per-session start time
         ]);
     }
 
@@ -128,21 +147,43 @@ class PsychotestController extends Controller
     {
         $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
 
-        if ($link->isExpired() || $link->isUsed()) {
-            return redirect()->route('psychotest.error', ['message' => 'Invalid or expired link.']);
+        if ($link->isExpired()) {
+             return redirect()->route('psychotest.error', ['message' => 'Invalid or expired link.']);
         }
 
         $request->validate([
             'answers' => 'required|array',
+            'session' => 'required|integer'
         ]);
+        
+        $session = $request->session;
+        $currentResults = $link->results ?? [];
+        
+        // Append new results
+        $currentResults["session_{$session}"] = [
+            'answers' => $request->answers,
+            'completed_at' => now()->toDateTimeString()
+        ];
 
-        $link->update([
-            'used_at' => Carbon::now(),
-            'finished_at' => Carbon::now(),
-            'results' => $request->answers,
-        ]);
+        $updateData = [
+            'results' => $currentResults,
+        ];
+        
+        // Only increment if we are submitting the current expected session
+        if ($session == $link->last_completed_session + 1) {
+            $updateData['last_completed_session'] = $session;
+        }
+        
+        // If all sessions done (assuming 3)
+        if ($session >= 3) {
+            $updateData['finished_at'] = now();
+            $updateData['used_at'] = now();
+        }
 
-        return Inertia::render('psychotest/success');
+        $link->update($updateData);
+
+        // Redirect back to Hub
+        return redirect()->route('psychotest.take-test', $uuid);
     }
 
     /**

@@ -15,6 +15,7 @@ class PsychotestLink extends Model
         'started_at',
         'finished_at',
         'results',
+        'last_completed_session',
     ];
 
     protected $casts = [
