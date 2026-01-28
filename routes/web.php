@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AuditLogController;
+use App\Http\Controllers\AuthTokenController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LessonController;
@@ -65,19 +66,5 @@ Route::get('/p/error', [PsychotestController::class, 'error'])->name('psychotest
 Route::get('/p/{uuid}', [PsychotestController::class, 'testPage'])->name('psychotest.take-test');
 Route::post('/p/{uuid}/submit', [PsychotestController::class, 'submit'])->name('psychotest.submit');
 
-// LMS Routes - accessible to all authenticated users
-// Route::middleware(['auth', 'verified'])->group(function () {
-//     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
-//     Route::get('/courses/{course}', [CourseController::class, 'show'])->name('courses.show');
-//     Route::get('/courses/{course}/lessons/{lesson}', [LessonController::class, 'show'])->name('courses.lessons.show');
-// });
-
-// // LMS Admin Routes - requires menu permission
-// Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
-//     Route::get('/courses-index', [CourseController::class, 'indexCrud'])->name('courses.index.crud');
-//     Route::post('/courses/{course}/lessons/reorder', [LessonController::class, 'reorder'])->name('courses.lessons.reorder');
-//     Route::resource('courses', CourseController::class);
-//     Route::resource('courses.lessons', LessonController::class)->except(['show']);
-// });
-
 require __DIR__ . '/settings.php';
+

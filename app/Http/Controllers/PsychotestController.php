@@ -26,6 +26,28 @@ class PsychotestController extends Controller
             })
         ]);
     }
+    
+    public function storeApi(Request $request)
+    {
+        $client = auth()->user(); // system client
+
+        $data = $request->validate([
+            'name' => 'required|string',
+            'email' => 'nullable|email',
+        ]);
+
+        $link = PsychotestLink::create([
+            'uuid' => Str::uuid(),
+            'applicant_name' => $data['name'],
+            'applicant_email' => $data['email'],
+            'expires_at' => now()->addHours(24),
+        ]);
+
+        return response()->json([
+            'psychotest_url' => route('psychotest.take-test', $link->uuid),
+            'expires_at' => $link->expires_at,
+        ]);
+    }
 
     /**
      * Store a newly created psychotest link (Simulating internal/external API request).
