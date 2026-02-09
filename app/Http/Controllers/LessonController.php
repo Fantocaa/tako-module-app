@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateLessonRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
+use Illuminate\Support\Facades\Cache;
 
 class LessonController extends Controller
 {
@@ -69,22 +70,26 @@ class LessonController extends Controller
      */
     public function show(Course $course, Lesson $lesson): Response
     {
-         $course->load(['lessons' => function ($query) {
-            $query->where('is_published', true)->orderBy('order');
-        }, 'tags', 'instructor']);
-        
-        $lessons = $course->lessons;
-        $currentIndex = $lessons->search(fn($l) => $l->id === $lesson->id);
-        
-        $prevLesson = $currentIndex > 0 ? $lessons[$currentIndex - 1] : null;
-        $nextLesson = $currentIndex < $lessons->count() - 1 ? $lessons[$currentIndex + 1] : null;
+        $data = Cache::tags(['courses'])->remember("course:slug:{$course->slug}:lesson:id:{$lesson->id}", 3600, function() use ($course, $lesson) {
+            $course->load(['lessons' => function ($query) {
+                $query->where('is_published', true)->orderBy('order');
+            }, 'tags', 'instructor']);
+            
+            $lessons = $course->lessons;
+            $currentIndex = $lessons->search(fn($l) => $l->id === $lesson->id);
+            
+            $prevLesson = $currentIndex > 0 ? $lessons[$currentIndex - 1] : null;
+            $nextLesson = $currentIndex < $lessons->count() - 1 ? $lessons[$currentIndex + 1] : null;
+
+            return compact('course', 'lesson', 'lessons', 'prevLesson', 'nextLesson');
+        });
 
         return Inertia::render('courses/[slug]/lessons/[id]', [
-            'course' => $course,
-            'lesson' => $lesson,
-            'lessons' => $lessons,
-            'prevLesson' => $prevLesson,
-            'nextLesson' => $nextLesson,
+            'course' => $data['course'],
+            'lesson' => $data['lesson'],
+            'lessons' => $data['lessons'],
+            'prevLesson' => $data['prevLesson'],
+            'nextLesson' => $data['nextLesson'],
         ]);
     }
 
@@ -161,6 +166,8 @@ class LessonController extends Controller
                 ->where('course_id', $course->id)
                 ->update(['order' => $item['order']]);
         }
+
+        $course->clearInstanceCache();
 
         return redirect()->back()->with('success', 'Lesson order updated successfully.');
     }

@@ -35,7 +35,7 @@ export interface PsychotestLink {
 }
 
 const copyLink = (uuid: string) => {
-    const url = `${window.location.origin}/p/${uuid}`;
+    const url = `${window.location.origin}/psychotest/${uuid}`;
     navigator.clipboard.writeText(url);
     toast.success('Link copied to clipboard!');
 };
@@ -142,7 +142,7 @@ export const columns: ColumnDef<PsychotestLink>[] = [
 
                             <DropdownMenuItem asChild>
                                 <a
-                                    href={`/p/${link.uuid}`}
+                                    href={`/psychotest/${link.uuid}`}
                                     target="_blank"
                                     rel="noreferrer"
                                 >
@@ -156,7 +156,7 @@ export const columns: ColumnDef<PsychotestLink>[] = [
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
                                         <Link
-                                            href={`/psychotest-admin/${link.uuid}/report`}
+                                            href={`/psychotest/${link.uuid}/report`}
                                         >
                                             <Eye className="mr-2 h-4 w-4" />
                                             View Report
@@ -164,7 +164,7 @@ export const columns: ColumnDef<PsychotestLink>[] = [
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
                                         <a
-                                            href={`/psychotest-admin/${link.uuid}/pdf`}
+                                            href={`/psychotest/${link.uuid}/pdf`}
                                         >
                                             <FileText className="mr-2 h-4 w-4" />
                                             Download PDF
@@ -183,7 +183,7 @@ export const columns: ColumnDef<PsychotestLink>[] = [
                                         )
                                     ) {
                                         router.post(
-                                            `/psychotest-admin/${link.uuid}/restart`,
+                                            `/psychotest/${link.uuid}/restart`,
                                         );
                                     }
                                 }}

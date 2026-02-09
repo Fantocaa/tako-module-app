@@ -1,5 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
     Dialog,
     DialogContent,
@@ -28,8 +29,15 @@ interface Props {
 const breadcrumbs: BreadcrumbItem[] = [
     {
         title: 'Psychotest Management',
-        href: '/psychotest-admin',
+        href: '/psychotest',
     },
+];
+
+const AVAILABLE_TESTS = [
+    { id: 'papicostic', title: 'Papicostic' },
+    { id: 'cfit', title: 'CFIT' },
+    { id: 'disc', title: 'DISC' },
+    { id: 'skill_test', title: 'Skill Test' },
 ];
 
 export default function PsychotestIndex({ links }: Props) {
@@ -39,11 +47,24 @@ export default function PsychotestIndex({ links }: Props) {
     const { data, setData, post, processing, errors, reset } = useForm({
         applicant_name: '',
         applicant_email: '',
+        included_tests: [] as string[],
     });
+
+    const toggleTest = (testId: string) => {
+        const current = [...data.included_tests];
+        if (current.includes(testId)) {
+            setData(
+                'included_tests',
+                current.filter((id) => id !== testId),
+            );
+        } else {
+            setData('included_tests', [...current, testId]);
+        }
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/psychotest-admin', {
+        post('/psychotest', {
             onSuccess: () => {
                 setIsDialogOpen(false);
                 toast.success('Temporary link generated!');
@@ -155,6 +176,41 @@ export default function PsychotestIndex({ links }: Props) {
                                                 </p>
                                             )}
                                         </div>
+
+                                        <div className="space-y-3">
+                                            <Label>Tests to Include</Label>
+                                            <div className="grid grid-cols-2 gap-4 rounded-xl border p-4">
+                                                {AVAILABLE_TESTS.map((test) => (
+                                                    <div
+                                                        key={test.id}
+                                                        className="flex items-center space-x-2"
+                                                    >
+                                                        <Checkbox
+                                                            id={test.id}
+                                                            checked={data.included_tests.includes(
+                                                                test.id,
+                                                            )}
+                                                            onCheckedChange={() =>
+                                                                toggleTest(
+                                                                    test.id,
+                                                                )
+                                                            }
+                                                        />
+                                                        <Label
+                                                            htmlFor={test.id}
+                                                            className="text-sm leading-none font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                                                        >
+                                                            {test.title}
+                                                        </Label>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <p className="text-xs text-muted-foreground">
+                                                Default includes all tests if
+                                                none selected.
+                                            </p>
+                                        </div>
+
                                         <div className="flex justify-end pt-2">
                                             <Button
                                                 type="submit"

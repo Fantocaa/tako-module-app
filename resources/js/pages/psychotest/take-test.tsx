@@ -6,13 +6,14 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, router, useForm } from '@inertiajs/react';
 import React from 'react';
 
 interface PsychotestLink {
     id: number;
     uuid: string;
     applicant_name: string;
+    allowed_sessions?: number[];
 }
 
 interface Question {
@@ -32,10 +33,13 @@ interface Props {
     questions: Question[];
     timeLimit: number;
     remainingTime: number;
+    currentSection?: number;
+    savedAnswers?: Record<string, any>;
 }
 
 interface ProcessedSection {
     id: string;
+    secNum: number;
     title: string;
     description: string;
     questions: Question[];
@@ -47,14 +51,20 @@ export default function TakeTest({
     questions,
     timeLimit,
     remainingTime,
+    currentSection = 1,
+    savedAnswers = {},
 }: Props) {
     const [timeLeft, setTimeLeft] = React.useState(remainingTime);
     const { data, setData, post, processing } = useForm<{
         answers: Record<string, any>;
         session: number;
+        current_section: number;
+        is_final: boolean;
     }>({
-        answers: {},
+        answers: savedAnswers,
         session: session,
+        current_section: currentSection,
+        is_final: false,
     });
 
     React.useEffect(() => {
@@ -114,50 +124,89 @@ export default function TakeTest({
         });
     };
 
-    const autoSubmit = () => {
-        post(`/p/${link.uuid}/submit`);
-    };
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        post(`/p/${link.uuid}/submit`);
+    const autoSubmit = () => {
+        setIsSubmitting(true);
+        router.post(
+            `/psychotest/${link.uuid}/submit`,
+            {
+                ...data,
+                is_final: true,
+            },
+            {
+                onFinish: () => setIsSubmitting(false),
+            },
+        );
     };
 
     // Group questions into sections
     const sections: ProcessedSection[] = React.useMemo(() => {
         const groups: Record<number, Question[]> = {};
         questions.forEach((q) => {
-            const sec = q.section_number || 0; // Default section 0 if null
+            const sec = q.section_number || 1; // Default to 1
             if (!groups[sec]) groups[sec] = [];
             groups[sec].push(q);
         });
 
-        return Object.entries(groups).map(([secNum, qs]) => {
-            // Try to infer title/desc from first question content if available, or generic
-            const guide = qs[0]?.content;
-            return {
-                id: `sec_${secNum}`,
-                title:
-                    qs[0]?.test_type === 'cfit'
-                        ? `Subtes ${secNum}`
-                        : guide?.section_title || `Section ${secNum}`,
-                description:
-                    guide?.section_description ||
-                    `Please answer the following questions.`,
-                questions: qs,
-            };
-        });
+        return Object.entries(groups)
+            .map(([secNum, qs]) => {
+                const sNum = parseInt(secNum);
+                const guide = qs[0]?.content;
+                return {
+                    id: `sec_${secNum}`,
+                    secNum: sNum,
+                    title:
+                        qs[0]?.test_type === 'cfit'
+                            ? `Subtes ${secNum}`
+                            : guide?.section_title || `Section ${secNum}`,
+                    description:
+                        guide?.section_description ||
+                        `Please answer the following questions.`,
+                    questions: qs,
+                };
+            })
+            .sort((a, b) => a.secNum - b.secNum);
     }, [questions]);
 
-    const isAllAnswered = questions.every((q) => {
+    // Current active section
+    const activeSection =
+        sections.find((s) => s.secNum === data.current_section) || sections[0];
+    const isLastSection =
+        activeSection?.secNum === sections[sections.length - 1]?.secNum;
+
+    const isAllAnswered = activeSection?.questions.every((q) => {
+        const answer = data.answers[q.id];
         if (q.type === 'disc') {
-            return data.answers[q.id]?.most && data.answers[q.id]?.least;
+            return answer?.most && answer?.least;
         }
         if (q.type === 'checkbox') {
-            return (data.answers[q.id] as string[])?.length === 2; // Assuming min 2 for checkbox
+            return (answer as string[])?.length === 2;
         }
-        return data.answers[q.id];
+        return answer !== undefined && answer !== null && answer !== '';
     });
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+
+        setIsSubmitting(true);
+
+        router.post(
+            `/psychotest/${link.uuid}/submit`,
+            {
+                ...data,
+                is_final: isLastSection,
+            },
+            {
+                onFinish: () => setIsSubmitting(false),
+                onSuccess: () => {
+                    if (!isLastSection) {
+                        setData('current_section', data.current_section + 1);
+                    }
+                },
+            },
+        );
+    };
 
     return (
         <div className="min-h-screen bg-background p-4 text-foreground md:p-8">
@@ -207,29 +256,36 @@ export default function TakeTest({
                     <CardContent className="bg-card p-0">
                         <form onSubmit={handleSubmit}>
                             <div className="divide-y divide-border">
-                                {sections.map((section) => (
+                                {activeSection && (
                                     <div
-                                        key={section.id}
+                                        key={activeSection.id}
                                         className="space-y-8 p-8 transition-colors hover:bg-muted/30"
                                     >
                                         <div className="space-y-1">
-                                            <h2 className="text-2xl font-black tracking-tight text-foreground">
-                                                {section.title}
-                                            </h2>
+                                            <div className="flex items-center justify-between">
+                                                <h2 className="text-2xl font-black tracking-tight text-foreground">
+                                                    {activeSection.title}
+                                                </h2>
+                                                <span className="rounded-full bg-primary/10 px-4 py-1 text-sm font-black text-primary">
+                                                    Subtest{' '}
+                                                    {sections.indexOf(
+                                                        activeSection,
+                                                    ) + 1}{' '}
+                                                    of {sections.length}
+                                                </span>
+                                            </div>
                                             <p className="font-medium text-muted-foreground">
-                                                {section.description}
+                                                {activeSection.description}
                                             </p>
                                         </div>
 
                                         <div className="grid gap-6">
-                                            {section.questions.map(
+                                            {activeSection.questions.map(
                                                 (q: Question, idx: number) => {
-                                                    // Map DB 'content' and 'options' to UI
                                                     const text =
                                                         q.content?.text;
                                                     const text2 =
                                                         q.content?.text2;
-                                                    // const imageUrl = q.content?.image_url; // Not used yet
                                                     const options =
                                                         q.options || [];
 
@@ -520,7 +576,7 @@ export default function TakeTest({
                                             )}
                                         </div>
                                     </div>
-                                ))}
+                                )}
                             </div>
 
                             <div className="border-t-2 border-border bg-muted/20 p-12">
@@ -529,15 +585,30 @@ export default function TakeTest({
                                         type="submit"
                                         className="h-20 w-full rounded-3xl text-2xl font-black shadow-2xl transition-all active:scale-95 disabled:grayscale"
                                         size="lg"
-                                        disabled={processing || !isAllAnswered}
+                                        disabled={
+                                            isSubmitting || !isAllAnswered
+                                        }
                                     >
-                                        {processing ? (
+                                        {isSubmitting ? (
                                             <div className="flex items-center gap-3">
                                                 <div className="h-5 w-5 animate-spin rounded-full border-4 border-white border-t-transparent" />
                                                 SUBMITTING...
                                             </div>
+                                        ) : isLastSection ? (
+                                            link.allowed_sessions &&
+                                            session ===
+                                                Math.max(
+                                                    ...link.allowed_sessions,
+                                                ) ? (
+                                                'FINALIZE TEST'
+                                            ) : !link.allowed_sessions &&
+                                              session === 3 ? (
+                                                'FINALIZE TEST'
+                                            ) : (
+                                                'SUBMIT & CONTINUE'
+                                            )
                                         ) : (
-                                            'FINALIZE TEST'
+                                            'NEXT SUBTEST'
                                         )}
                                     </Button>
                                     {!isAllAnswered && (

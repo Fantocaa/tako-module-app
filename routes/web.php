@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\AuditLogController;
-use App\Http\Controllers\AuthTokenController;
 use App\Http\Controllers\BackupController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\LessonController;
@@ -16,7 +15,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use Laravel\Fortify\Features;
+// use Laravel\Fortify\Features;
 
 Route::get('/', function () {
     // return Inertia::render('welcome', [
@@ -55,20 +54,20 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::resource('courses.lessons', LessonController::class);
 
     // Psychotest Admin/Testing Routes
-    Route::get('/psychotest-admin', [PsychotestController::class, 'index'])->name('psychotest.index');
-    Route::post('/psychotest-admin', [PsychotestController::class, 'store'])->name('psychotest.store');
-    Route::get('/psychotest-admin/{uuid}/report', [PsychotestController::class, 'report'])->name('psychotest.report');
-    Route::get('/psychotest-admin/{uuid}/pdf', [PsychotestController::class, 'downloadPdf'])->name('psychotest.pdf');
-    Route::post('/psychotest-admin/{uuid}/restart', [PsychotestController::class, 'restart'])->name('psychotest.restart');
+    Route::get('/psychotest', [PsychotestController::class, 'index'])->name('psychotest.index');
+    Route::post('/psychotest', [PsychotestController::class, 'store'])->name('psychotest.store');
+    Route::get('/psychotest/{uuid}/report', [PsychotestController::class, 'report'])->name('psychotest.report');
+    Route::get('/psychotest/{uuid}/pdf', [PsychotestController::class, 'downloadPdf'])->name('psychotest.pdf');
+    Route::post('/psychotest/{uuid}/restart', [PsychotestController::class, 'restart'])->name('psychotest.restart');
     
     // Psychotest Questions CRUD
     Route::resource('psychotest-questions', PsychotestQuestionController::class);
 });
 
 // Applicant Psychotest Routes (Public)
-Route::get('/p/error', [PsychotestController::class, 'error'])->name('psychotest.error');
-Route::get('/p/{uuid}', [PsychotestController::class, 'testPage'])->name('psychotest.take-test');
-Route::post('/p/{uuid}/submit', [PsychotestController::class, 'submit'])->name('psychotest.submit');
+Route::get('/psychotest/error', [PsychotestController::class, 'error'])->name('psychotest.error');
+Route::get('/psychotest/{uuid}', [PsychotestController::class, 'testPage'])->name('psychotest.take-test');
+Route::post('/psychotest/{uuid}/submit', [PsychotestController::class, 'submit'])->name('psychotest.submit');
 
 require __DIR__ . '/settings.php';
 

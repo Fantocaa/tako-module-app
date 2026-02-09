@@ -29,8 +29,6 @@ import { Edit, MoreHorizontal, Plus, Search, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
-// --- Types ---
-
 interface PsychotestQuestion {
     id: number;
     test_type: string;

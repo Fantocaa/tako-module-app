@@ -1,8 +1,11 @@
 <?php
 
+use App\Models\Menu;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\Models\Role;
 
 return new class extends Migration
 {
@@ -12,20 +15,20 @@ return new class extends Migration
     public function up(): void
     {
         // 1. Create permission
-        $permission = \Spatie\Permission\Models\Permission::firstOrCreate(
+        $permission = Permission::firstOrCreate(
             ['name' => 'psychotest-view', 'guard_name' => 'web'],
             ['group' => 'Utilities']
         );
 
         // 2. Assign to admin role
-        $admin = \Spatie\Permission\Models\Role::where('name', 'admin')->first();
+        $admin = Role::where('name', 'admin')->first();
         if ($admin && !$admin->hasPermissionTo($permission)) {
             $admin->givePermissionTo($permission);
         }
 
         // 3. Create Menu
-        \App\Models\Menu::firstOrCreate(
-            ['route' => '/psychotest-admin'],
+        Menu::firstOrCreate(
+            ['route' => '/psychotest'],
             [
                 'title' => 'Psychotest Links',
                 'icon' => 'Link',
@@ -40,7 +43,7 @@ return new class extends Migration
      */
     public function down(): void
     {
-        \App\Models\Menu::where('route', '/psychotest-admin')->delete();
-        \Spatie\Permission\Models\Permission::where('name', 'psychotest-view')->delete();
+        Menu::where('route', '/psychotest')->delete();
+        Permission::where('name', 'psychotest-view')->delete();
     }
 };

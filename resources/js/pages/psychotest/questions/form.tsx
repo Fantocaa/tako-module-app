@@ -9,9 +9,9 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { useForm } from '@inertiajs/react';
+import { router, useForm } from '@inertiajs/react';
 import { Trash } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 
 interface QuestionFormProps {
     question?: any;
@@ -51,11 +51,34 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                 ] as any[]),
         });
 
-    // Auto-set session number based on test type
+    // Auto-set session number and type based on test type
     useEffect(() => {
-        if (data.test_type === 'papicostic') setData('session_number', 1);
-        if (data.test_type === 'cfit') setData('session_number', 2);
-        if (data.test_type === 'disc') setData('session_number', 3);
+        if (data.test_type === 'papicostic') {
+            setData((d) => ({
+                ...d,
+                session_number: 1,
+                type: 'forced',
+            }));
+        }
+        if (data.test_type === 'cfit') {
+            const validCfitTypes = [
+                'standard',
+                'multiple_select',
+                'comparison',
+            ];
+            setData((d) => ({
+                ...d,
+                session_number: 2,
+                type: validCfitTypes.includes(d.type) ? d.type : 'standard',
+            }));
+        }
+        if (data.test_type === 'disc') {
+            setData((d) => ({
+                ...d,
+                session_number: 3,
+                type: 'disc',
+            }));
+        }
     }, [data.test_type]);
 
     // Initialize options based on type
@@ -82,10 +105,18 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
         }
     }, [data.type]);
 
+    const [isSubmitting, setIsSubmitting] = useState(processing);
+
+    useEffect(() => {
+        setIsSubmitting(processing);
+    }, [processing]);
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
 
-        transform((data) => ({
+        setIsSubmitting(true);
+
+        const payload = {
             ...data,
             section_number: data.section_number
                 ? parseInt(data.section_number as string)
@@ -94,12 +125,16 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                 text: data.content_text,
                 text2: data.content_text2,
             },
-        }));
+        };
 
         if (mode === 'edit') {
-            put(`/psychotest-questions/${question.id}`);
+            router.put(`/psychotest-questions/${question.id}`, payload, {
+                onFinish: () => setIsSubmitting(false),
+            });
         } else {
-            post('/psychotest-questions');
+            router.post('/psychotest-questions', payload, {
+                onFinish: () => setIsSubmitting(false),
+            });
         }
     };
 
@@ -160,21 +195,29 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                                 <SelectValue placeholder="Select format" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="disc">
-                                    DISC (Most/Least)
-                                </SelectItem>
-                                <SelectItem value="forced">
-                                    Forced Choice (A/B)
-                                </SelectItem>
-                                <SelectItem value="standard">
-                                    Standard Choice
-                                </SelectItem>
-                                <SelectItem value="multiple_select">
-                                    Multiple Select
-                                </SelectItem>
-                                <SelectItem value="comparison">
-                                    Comparison
-                                </SelectItem>
+                                {data.test_type === 'disc' && (
+                                    <SelectItem value="disc">
+                                        DISC (Most/Least)
+                                    </SelectItem>
+                                )}
+                                {data.test_type === 'papicostic' && (
+                                    <SelectItem value="forced">
+                                        Forced Choice (A/B)
+                                    </SelectItem>
+                                )}
+                                {data.test_type === 'cfit' && (
+                                    <>
+                                        <SelectItem value="standard">
+                                            Standard Choice
+                                        </SelectItem>
+                                        <SelectItem value="multiple_select">
+                                            Multiple Select
+                                        </SelectItem>
+                                        <SelectItem value="comparison">
+                                            Comparison
+                                        </SelectItem>
+                                    </>
+                                )}
                             </SelectContent>
                         </Select>
                     </div>
@@ -182,7 +225,7 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
             </div>
 
             <div className="grid grid-cols-3 gap-6">
-                <div className="space-y-2">
+                <div className="hidden space-y-2">
                     <Label>Session Number</Label>
                     <Input
                         type="number"
@@ -195,7 +238,7 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                     />
                 </div>
                 <div className="space-y-2">
-                    <Label>Section Number</Label>
+                    <Label>Subtest</Label>
                     <Input
                         type="number"
                         placeholder="e.g 1"
@@ -333,10 +376,10 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                 </Button>
                 <Button
                     type="submit"
-                    disabled={processing}
+                    disabled={isSubmitting}
                     className="min-w-[120px]"
                 >
-                    {processing
+                    {isSubmitting
                         ? 'Saving...'
                         : mode === 'create'
                           ? 'Create Question'

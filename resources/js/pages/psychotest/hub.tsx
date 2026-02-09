@@ -6,36 +6,85 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Head, Link } from '@inertiajs/react';
-import { CheckCircle, Lock, PlayCircle } from 'lucide-react';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
+import { Head, router } from '@inertiajs/react';
+import { CheckCircle, Info, Lock, PlayCircle } from 'lucide-react';
+import React from 'react';
 
 interface Props {
     link: any;
     currentSession: number;
 }
 
-const SESSIONS = [
+const ALL_SESSIONS = [
     {
         id: 1,
         title: 'Session 1',
         description: 'Papicostic Test',
         duration: 'Multiple Parts',
+        type: 'papicostic',
+        instructions:
+            'Terdapat 90 pasang pernyataan. Pilih salah satu pernyataan dari setiap pasangan yang paling menggambarkan diri Anda. Tes ini tidak memiliki jawaban benar atau salah.',
     },
     {
         id: 2,
         title: 'Session 2',
         description: 'CFIT Intelligence Test',
         duration: 'Timed Sections',
+        type: 'cfit',
+        instructions:
+            'Tes ini terdiri dari 4 subtes dengan batas waktu masing-masing (3-4 menit). Anda akan berpindah ke subtes selanjutnya secara otomatis setelah menyelesaikan bagian sebelumnya. Jawaban yang sudah dikirim akan terkunci.',
     },
     {
         id: 3,
         title: 'Session 3',
         description: 'DISC Profile',
         duration: 'Personality Test',
+        type: 'disc',
+        instructions:
+            'Dari setiap kelompok yang terdiri dari 4 pernyataan, pilih satu yang PALING menggambarkan Anda (M) dan satu yang PALING TIDAK menggambarkan Anda (L).',
+    },
+    {
+        id: 4,
+        title: 'Session 4',
+        description: 'Skill Test',
+        duration: 'Technical Assessment',
+        type: 'skill_test',
+        instructions:
+            'Kerjakan tes teknis sesuai dengan instruksi yang diberikan pada bagian pertanyaan.',
     },
 ];
 
 export default function PsychotestHub({ link, currentSession }: Props) {
+    const [startingSession, setStartingSession] = React.useState<any>(null);
+
+    const allowedSessionIds = link.allowed_sessions || [1, 2, 3, 4];
+    const sessions = ALL_SESSIONS.filter((s) =>
+        allowedSessionIds.includes(s.id),
+    );
+
+    // Determine the next session the user should take
+    const nextSessionId = allowedSessionIds
+        .sort()
+        .find((id: number) => id > currentSession);
+    const isTotallyDone = !nextSessionId;
+
+    const handleStart = () => {
+        if (startingSession) {
+            router.get(
+                `/psychotest/${link.uuid}?session=${startingSession.id}`,
+            );
+        }
+    };
+
     return (
         <div className="min-h-screen bg-background p-4 md:p-8">
             <Head title={`Assessment Hub - ${link.applicant_name}`} />
@@ -57,10 +106,10 @@ export default function PsychotestHub({ link, currentSession }: Props) {
                 </div>
 
                 <div className="grid gap-4">
-                    {SESSIONS.map((session) => {
+                    {sessions.map((session) => {
                         const isDone = currentSession >= session.id;
-                        const isOpen = currentSession === session.id - 1;
-                        const isFuture = currentSession < session.id - 1;
+                        const isOpen = session.id === nextSessionId;
+                        const isFuture = session.id > (nextSessionId || 999);
 
                         return (
                             <Card
@@ -102,18 +151,53 @@ export default function PsychotestHub({ link, currentSession }: Props) {
                                         </CardDescription>
                                     </div>
                                     {isOpen && (
-                                        <Button
-                                            asChild
-                                            size="lg"
-                                            className="rounded-full px-6 font-bold shadow-lg shadow-primary/20"
-                                        >
-                                            <Link
-                                                href={`/p/${link.uuid}?session=${session.id}`}
-                                            >
-                                                Start Now{' '}
-                                                <PlayCircle className="ml-2 h-5 w-5" />
-                                            </Link>
-                                        </Button>
+                                        <Dialog>
+                                            <DialogTrigger asChild>
+                                                <Button
+                                                    onClick={() =>
+                                                        setStartingSession(
+                                                            session,
+                                                        )
+                                                    }
+                                                    size="lg"
+                                                    className="rounded-full px-6 font-bold shadow-lg shadow-primary/20"
+                                                >
+                                                    Start Now{' '}
+                                                    <PlayCircle className="ml-2 h-5 w-5" />
+                                                </Button>
+                                            </DialogTrigger>
+                                            <DialogContent className="sm:max-w-md">
+                                                <DialogHeader>
+                                                    <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                                                        <Info className="h-6 w-6" />
+                                                    </div>
+                                                    <DialogTitle className="text-2xl font-black">
+                                                        Test Instructions
+                                                    </DialogTitle>
+                                                    <DialogDescription className="text-base font-medium">
+                                                        Please read carefully
+                                                        before starting the{' '}
+                                                        <span className="font-bold text-foreground">
+                                                            {session.title}
+                                                        </span>
+                                                        .
+                                                    </DialogDescription>
+                                                </DialogHeader>
+                                                <div className="rounded-2xl bg-muted/50 p-6">
+                                                    <p className="text-lg leading-relaxed font-bold text-foreground">
+                                                        {session.instructions}
+                                                    </p>
+                                                </div>
+                                                <DialogFooter className="mt-4">
+                                                    <Button
+                                                        onClick={handleStart}
+                                                        className="h-14 w-full rounded-2xl text-lg font-black shadow-xl"
+                                                    >
+                                                        I UNDERSTAND & START
+                                                    </Button>
+                                                </DialogFooter>
+                                            </DialogContent>
+                                        </Dialog>
                                     )}
                                     {isDone && (
                                         <Badge
@@ -129,7 +213,7 @@ export default function PsychotestHub({ link, currentSession }: Props) {
                     })}
                 </div>
 
-                {currentSession >= 3 && (
+                {isTotallyDone && (
                     <Card className="border-none bg-green-600 text-white shadow-xl dark:bg-green-700">
                         <CardHeader className="text-center">
                             <CardTitle className="text-2xl font-black text-white">

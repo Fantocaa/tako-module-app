@@ -10,6 +10,7 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
 
 class CourseController extends Controller
 {
@@ -54,13 +55,23 @@ class CourseController extends Controller
             });
         }
 
-        $courses = $query->latest()->paginate(12)->withQueryString();
+        $cacheKey = 'courses:index:' . md5(json_encode([
+            'user_id' => $user->id,
+            'tag' => $request->tag,
+            'search' => $request->search,
+            'page' => $request->get('page', 1)
+        ]));
 
-        $tags = Tag::orderBy('name')->get();
+        $data = Cache::tags(['courses'])->remember($cacheKey, 3600, function() use ($query, $request) {
+            $courses = $query->latest()->paginate(12)->withQueryString();
+            $tags = Tag::orderBy('name')->get();
+            
+            return compact('courses', 'tags');
+        });
 
         return Inertia::render('courses/index', [
-            'courses' => $courses,
-            'tags' => $tags,
+            'courses' => $data['courses'],
+            'tags' => $data['tags'],
             'filters' => [
                 'tag' => $request->tag,
                 'search' => $request->search,
@@ -149,9 +160,11 @@ class CourseController extends Controller
      */
     public function show(Course $course): Response
     {
-        $course->load(['lessons' => function ($query) {
-            $query->where('is_published', true)->orderBy('order');
-        }, 'tags', 'instructor']);
+        $course = Cache::tags(['courses'])->remember("course:slug:{$course->slug}", 3600, function() use ($course) {
+            return $course->load(['lessons' => function ($query) {
+                $query->where('is_published', true)->orderBy('order');
+            }, 'tags', 'instructor']);
+        });
 
         return Inertia::render('courses/[slug]', [
             'course' => $course,

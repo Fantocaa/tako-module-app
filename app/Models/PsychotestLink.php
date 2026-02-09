@@ -10,12 +10,14 @@ class PsychotestLink extends Model
         'uuid',
         'applicant_name',
         'applicant_email',
+        'nik',
         'expires_at',
         'used_at',
         'started_at',
         'finished_at',
         'results',
         'last_completed_session',
+        'included_tests',
     ];
 
     protected $casts = [
@@ -24,6 +26,7 @@ class PsychotestLink extends Model
         'started_at' => 'datetime',
         'finished_at' => 'datetime',
         'results' => 'array',
+        'included_tests' => 'array',
     ];
 
     public function getDurationAttribute()

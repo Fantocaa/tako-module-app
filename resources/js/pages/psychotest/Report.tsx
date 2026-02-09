@@ -28,11 +28,11 @@ export default function PsychotestReport({ link }: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Psychotest Management',
-            href: '/psychotest-admin',
+            href: '/psychotest',
         },
         {
             title: `Report: ${link.applicant_name}`,
-            href: `/psychotest-admin/${link.uuid}/report`,
+            href: `/psychotest/${link.uuid}/report`,
         },
     ];
 
@@ -55,7 +55,7 @@ export default function PsychotestReport({ link }: Props) {
                                 Print
                             </Button>
                             <Button asChild>
-                                <a href={`/psychotest-admin/${link.uuid}/pdf`}>
+                                <a href={`/psychotest/${link.uuid}/pdf`}>
                                     <Download className="mr-2 h-4 w-4" />
                                     Download PDF
                                 </a>

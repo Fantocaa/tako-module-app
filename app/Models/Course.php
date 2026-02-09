@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Cache;
 
 class Course extends Model
 {
@@ -44,9 +45,15 @@ class Course extends Model
      */
     public function resolveRouteBinding($value, $field = null)
     {
-        return $this->where($field ?? 'id', $value)
-            ->orWhere('slug', $value)
-            ->firstOrFail();
+        if ($field) {
+            return $this->where($field, $value)->firstOrFail();
+        }
+
+        if (is_numeric($value)) {
+            return $this->where('id', $value)->orWhere('slug', $value)->firstOrFail();
+        }
+
+        return $this->where('slug', $value)->firstOrFail();
     }
 
     /**
@@ -95,5 +102,31 @@ class Course extends Model
     public function getTotalDurationAttribute(): int
     {
         return $this->lessons()->sum('duration') ?? 0;
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(fn ($course) => $course->clearInstanceCache());
+        static::deleted(fn ($course) => $course->clearInstanceCache());
+    }
+
+    /**
+     * Clear course related cache.
+     */
+    public static function clearCache(): void
+    {
+        Cache::tags(['courses'])->flush();
+    }
+
+    /**
+     * Clear specific course cache.
+     */
+    public function clearInstanceCache(): void
+    {
+        Cache::forget("course:slug:{$this->slug}");
+        static::clearCache();
     }
 }

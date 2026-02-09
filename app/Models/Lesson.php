@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\Cache;
 
 class Lesson extends Model
 {
@@ -43,5 +44,19 @@ class Lesson extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('order');
+    }
+
+    /**
+     * Boot the model.
+     */
+    protected static function booted(): void
+    {
+        static::saved(function ($lesson) {
+            $lesson->course?->clearInstanceCache();
+        });
+
+        static::deleted(function ($lesson) {
+            $lesson->course?->clearInstanceCache();
+        });
     }
 }
