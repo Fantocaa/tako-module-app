@@ -149,8 +149,6 @@ export const columns: ColumnDef<PsychotestQuestion>[] = [
     },
 ];
 
-// --- Main Component ---
-
 export default function QuestionsIndex({ questions }: Props) {
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [sorting, setSorting] = useState<SortingState>([]);

@@ -1,4 +1,3 @@
-import { Button } from '@/components/ui/button';
 import {
     Card,
     CardContent,
@@ -6,7 +5,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Head, Link } from '@inertiajs/react';
+import { Head } from '@inertiajs/react';
 import { AlertCircle } from 'lucide-react';
 
 interface Props {
@@ -31,11 +30,11 @@ export default function PsychotestError({ message }: Props) {
                 </CardHeader>
                 <CardContent className="space-y-4 pb-8 text-center">
                     <p className="text-muted-foreground">{message}</p>
-                    <div className="pt-2">
+                    {/* <div className="pt-2">
                         <Button asChild variant="outline">
                             <Link href="/">Back to Home</Link>
                         </Button>
-                    </div>
+                    </div> */}
                 </CardContent>
             </Card>
         </div>

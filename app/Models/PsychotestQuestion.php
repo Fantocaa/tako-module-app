@@ -10,6 +10,7 @@ class PsychotestQuestion extends Model
         'test_type',
         'session_number',
         'section_number',
+        'section_duration',
         'question_number',
         'type',
         'content',

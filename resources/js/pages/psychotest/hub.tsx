@@ -80,7 +80,7 @@ export default function PsychotestHub({ link, currentSession }: Props) {
     const handleStart = () => {
         if (startingSession) {
             router.get(
-                `/psychotest/${link.uuid}?session=${startingSession.id}`,
+                `/psychotest-link/${link.uuid}?session=${startingSession.id}`,
             );
         }
     };

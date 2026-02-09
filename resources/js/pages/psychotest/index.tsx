@@ -64,7 +64,7 @@ export default function PsychotestIndex({ links }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        post('/psychotest', {
+        post('/psychotest-link', {
             onSuccess: () => {
                 setIsDialogOpen(false);
                 toast.success('Temporary link generated!');

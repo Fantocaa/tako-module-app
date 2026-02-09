@@ -51,17 +51,14 @@ class PsychotestLink extends Model
 
     public function isExpired()
     {
+        // If the test is already finished, it's not "expired"
+        if ($this->finished_at) {
+            return false;
+        }
+
         // Global link expiration (24h)
         if ($this->expires_at->isPast()) {
             return true;
-        }
-
-        // Session expiration (X seconds after started_at)
-        if ($this->started_at) {
-            $elapsedSeconds = $this->started_at->diffInSeconds(now());
-            if ($elapsedSeconds >= self::SESSION_DURATION_SECONDS) {
-                return true;
-            }
         }
 
         return false;

@@ -125,6 +125,7 @@ class PsychotestController extends Controller
 
         // Specific Session
         $session = (int) $request->session;
+        $currentSection = (int) ($request->current_section ?? 1);
         
         // Check if session is in allowed list
         if (!in_array($session, $allowedSessions)) {
@@ -148,21 +149,8 @@ class PsychotestController extends Controller
         // Let's assume if you skip session 2, 'last_completed_session' will jump from 1 to 3? Or stay 1?
         // If we use 'last_completed_session' to track progress, we must ensure we update it correctly in submit().
         
-        // ALLOWING simple access for now:
-        if ($session > $link->last_completed_session + 1) {
-             // Exception: if intermediate sessions are NOT allowed, we can skip them.
-             // e.g. allowed=[1,3]. last_completed=1. Request session=3.
-             // 3 > 1+1 (2). But 2 is not allowed. So 3 IS the next one.
-             
-             $previousAllowed = collect($allowedSessions)->filter(fn($s) => $s < $session)->max();
-             if ($previousAllowed && $link->last_completed_session < $previousAllowed) {
-                  return redirect()->route('psychotest.take-test', $uuid)
-                    ->with('error', 'Please complete previous sessions first.');
-             }
-        }
-
         // Check if session is already done
-        if ($session <= $link->last_completed_session) {
+        if ($session < $link->last_completed_session) {
              return redirect()->route('psychotest.take-test', $uuid)
                 ->with('error', 'Session already completed.');
         }
@@ -174,40 +162,42 @@ class PsychotestController extends Controller
             ]);
         }
         
-        // Fetch questions for this session
+        // Fetch questions for this session and section
         $questions = PsychotestQuestion::where('session_number', $session)
-            ->orderBy('section_number')
+            ->where('section_number', $currentSection)
             ->orderBy('question_number')
             ->get();
-            
-        // Map questions to the format expected by frontend (if needed, or adjust frontend)
-        // Adjusting frontend to match DB structure is better.
-        
-        // For time limit, we might want per-session limits. 
-        // For now using global or hardcoded per session.
-        $timeLimits = [
-            1 => 60 * 60, // 60 mins for Papi
-            2 => 30 * 60, // 30 mins for CFIT
-            3 => 20 * 60, // 20 mins for DISC
-        ];
-        
-        $sessionTimeLimit = $timeLimits[$session] ?? 600;
 
-        // Server-side Timer Persistence
+        if ($questions->isEmpty()) {
+             // If we requested a section that has no questions, it might mean we're done or it's a gap
+             // For now redirect back to hub if no questions found for this section
+             return redirect()->route('psychotest.take-test', $uuid)
+                ->with('error', 'No questions found for this section.');
+        }
+            
+        // Get section duration from the first question
+        $sectionDuration = $questions->first()->section_duration ?? 600; // Default to 10 mins if not set
+
+        // Server-side Timer Persistence per section
         $results = $link->results ?? [];
         if (!isset($results["session_{$session}"])) {
             $results["session_{$session}"] = [
-                'started_at' => now()->toDateTimeString(),
-                'current_section' => 1,
+                'current_section' => $currentSection,
                 'answers' => []
             ];
+        }
+
+        // Specifically track start time of THIS section
+        $sectionKey = "section_{$currentSection}_started_at";
+        if (!isset($results["session_{$session}"][$sectionKey])) {
+            $results["session_{$session}"][$sectionKey] = now()->toDateTimeString();
             $link->update(['results' => $results]);
         }
 
         $sessionData = $results["session_{$session}"];
-        $startedAt = Carbon::parse($sessionData['started_at']);
+        $startedAt = Carbon::parse($sessionData[$sectionKey]);
         $elapsedSeconds = $startedAt->diffInSeconds(now());
-        $remainingTime = max(0, $sessionTimeLimit - $elapsedSeconds);
+        $remainingTime = max(0, $sectionDuration - $elapsedSeconds);
 
         return Inertia::render('psychotest/take-test', [
             'link' => array_merge($link->toArray(), [
@@ -215,9 +205,9 @@ class PsychotestController extends Controller
             ]),
             'session' => $session,
             'questions' => $questions,
-            'timeLimit' => $sessionTimeLimit,
+            'timeLimit' => (int) $sectionDuration,
             'remainingTime' => (int) $remainingTime,
-            'currentSection' => $sessionData['current_section'] ?? 1,
+            'currentSection' => $currentSection,
             'savedAnswers' => $sessionData['answers'] ?? []
         ]);
     }
@@ -248,65 +238,71 @@ class PsychotestController extends Controller
         // Initialize session data if missing
         if (!isset($currentResults["session_{$session}"])) {
              $currentResults["session_{$session}"] = [
-                'started_at' => now()->toDateTimeString(),
+                'current_section' => $currentSection,
                 'answers' => []
              ];
         }
 
-        // Update answers and progress
+        // Update answers
         $currentResults["session_{$session}"]['answers'] = array_merge(
             $currentResults["session_{$session}"]['answers'] ?? [],
             $request->answers
         );
         
+        $updateData = [];
+
         if (!$isFinal) {
-            $currentResults["session_{$session}"]['current_section'] = $currentSection + 1;
+            // Advancing to NEXT SUBTEST within the same session
+            $nextSection = $currentSection + 1;
+            $currentResults["session_{$session}"]['current_section'] = $nextSection;
+            
+            $updateData['results'] = $currentResults;
+            $link->update($updateData);
+
+            return redirect()->route('psychotest.take-test', [
+                'uuid' => $uuid,
+                'session' => $session,
+                'current_section' => $nextSection
+            ]);
         } else {
+            // COMPLETING the entire session
             $currentResults["session_{$session}"]['completed_at'] = now()->toDateTimeString();
-        }
+            $updateData['results'] = $currentResults;
 
-        $updateData = [
-            'results' => $currentResults,
-        ];
-        
-        // Calculate allowed sessions to determine max session
-        $testTypeToSession = [
-            'papicostic' => 1,
-            'cfit' => 2,
-            'disc' => 3,
-            'skill_test' => 4
-        ];
-        
-        $allowedSessions = [1, 2, 3, 4];
-        if (!empty($link->included_tests)) {
-            $allowedSessions = collect($link->included_tests)
-                ->map(fn($type) => $testTypeToSession[$type] ?? null)
-                ->filter()
-                ->values()
-                ->toArray();
-        }
+            // Update session progress
+            if ($session > $link->last_completed_session) {
+                $updateData['last_completed_session'] = $session;
+            }
 
-        // Update progress if this session is completed and further than before
-        if ($isFinal && $session > $link->last_completed_session) {
-            $updateData['last_completed_session'] = $session;
-        }
-        
-        // Check if this was the last allowed session
-        $maxSession = !empty($allowedSessions) ? max($allowedSessions) : 4;
-        
-        if ($isFinal && $session >= $maxSession) {
-            $updateData['finished_at'] = now();
-            $updateData['used_at'] = now();
-        }
+            // Calculate allowed sessions to determine if this is the last one
+            $testTypeToSession = [
+                'papicostic' => 1,
+                'cfit' => 2,
+                'disc' => 3,
+                'skill_test' => 4
+            ];
+            
+            $allowedSessions = [1, 2, 3, 4];
+            if (!empty($link->included_tests)) {
+                $allowedSessions = collect($link->included_tests)
+                    ->map(fn($type) => $testTypeToSession[$type] ?? null)
+                    ->filter()
+                    ->values()
+                    ->toArray();
+            }
 
-        $link->update($updateData);
+            $maxSession = !empty($allowedSessions) ? max($allowedSessions) : 4;
+            
+            if ($session >= $maxSession) {
+                $updateData['finished_at'] = now();
+                $updateData['used_at'] = now();
+            }
 
-        // If final, go back to Hub, else stay for next subtest
-        if ($isFinal) {
+            $link->update($updateData);
+
+            // Redirect back to Hub
             return redirect()->route('psychotest.take-test', $uuid);
         }
-
-        return back();
     }
 
     /**
@@ -344,12 +340,13 @@ class PsychotestController extends Controller
     public function restart($uuid)
     {
         $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
-
+        
         $link->update([
             'started_at' => null,
             'finished_at' => null,
             'used_at' => null,
-            'results' => null,
+            'results' => [], // Clear all previous results
+            'last_completed_session' => 0, // Reset progress
             'expires_at' => Carbon::now()->addHours(24),
         ]);
 

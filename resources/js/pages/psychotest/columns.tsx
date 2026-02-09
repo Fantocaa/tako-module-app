@@ -62,23 +62,33 @@ export const columns: ColumnDef<PsychotestLink>[] = [
         cell: ({ row }) => {
             const link = row.original;
 
-            // 1. Completed: Submitted manually
+            // 1. Completed: Finished or Used
             if (
-                link.used_at &&
-                link.results &&
-                Object.keys(link.results).length > 0
+                link.used_at ||
+                (link.results && Object.keys(link.results).length > 0)
             ) {
-                return (
-                    <Badge
-                        variant="default"
-                        className="bg-green-500 text-white"
-                    >
-                        Completed
-                    </Badge>
-                );
+                const isFinished =
+                    !!link.used_at ||
+                    (link.results &&
+                        Object.keys(link.results).some(
+                            (k) =>
+                                k.startsWith('session_') &&
+                                link.results[k].completed_at,
+                        ));
+
+                if (link.used_at || isFinished) {
+                    return (
+                        <Badge
+                            variant="default"
+                            className="bg-green-500 text-white"
+                        >
+                            Completed
+                        </Badge>
+                    );
+                }
             }
 
-            // 2. Timed Out: Started but session expired (locked by controller OR still in progress but past time)
+            // 2. Timed Out: Session expired
             if (link.is_expired && link.started_at) {
                 return (
                     <Badge
@@ -90,7 +100,7 @@ export const columns: ColumnDef<PsychotestLink>[] = [
                 );
             }
 
-            // 3. Link Expired: Never started and 24h passed
+            // 3. Link Expired: Never started
             if (link.is_expired && !link.started_at) {
                 return (
                     <Badge
@@ -102,7 +112,11 @@ export const columns: ColumnDef<PsychotestLink>[] = [
                 );
             }
 
-            return <Badge variant="default">Active</Badge>;
+            return (
+                <Badge variant="default" className="bg-blue-500 text-white">
+                    Active
+                </Badge>
+            );
         },
     },
     {
@@ -156,7 +170,7 @@ export const columns: ColumnDef<PsychotestLink>[] = [
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
                                         <Link
-                                            href={`/psychotest/${link.uuid}/report`}
+                                            href={`/psychotest-link/${link.uuid}/report`}
                                         >
                                             <Eye className="mr-2 h-4 w-4" />
                                             View Report
@@ -164,7 +178,7 @@ export const columns: ColumnDef<PsychotestLink>[] = [
                                     </DropdownMenuItem>
                                     <DropdownMenuItem asChild>
                                         <a
-                                            href={`/psychotest/${link.uuid}/pdf`}
+                                            href={`/psychotest-link/${link.uuid}/pdf`}
                                         >
                                             <FileText className="mr-2 h-4 w-4" />
                                             Download PDF
@@ -183,7 +197,7 @@ export const columns: ColumnDef<PsychotestLink>[] = [
                                         )
                                     ) {
                                         router.post(
-                                            `/psychotest/${link.uuid}/restart`,
+                                            `/psychotest-link/${link.uuid}/restart`,
                                         );
                                     }
                                 }}

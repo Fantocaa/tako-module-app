@@ -129,7 +129,7 @@ export default function TakeTest({
     const autoSubmit = () => {
         setIsSubmitting(true);
         router.post(
-            `/psychotest/${link.uuid}/submit`,
+            `/psychotest-link/${link.uuid}/submit`,
             {
                 ...data,
                 is_final: true,
@@ -192,7 +192,7 @@ export default function TakeTest({
         setIsSubmitting(true);
 
         router.post(
-            `/psychotest/${link.uuid}/submit`,
+            `/psychotest-link/${link.uuid}/submit`,
             {
                 ...data,
                 is_final: isLastSection,

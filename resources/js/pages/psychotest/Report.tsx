@@ -32,7 +32,7 @@ export default function PsychotestReport({ link }: Props) {
         },
         {
             title: `Report: ${link.applicant_name}`,
-            href: `/psychotest/${link.uuid}/report`,
+            href: `/psychotest-link/${link.uuid}/report`,
         },
     ];
 
@@ -55,7 +55,7 @@ export default function PsychotestReport({ link }: Props) {
                                 Print
                             </Button>
                             <Button asChild>
-                                <a href={`/psychotest/${link.uuid}/pdf`}>
+                                <a href={`/psychotest-link/${link.uuid}/pdf`}>
                                     <Download className="mr-2 h-4 w-4" />
                                     Download PDF
                                 </a>
