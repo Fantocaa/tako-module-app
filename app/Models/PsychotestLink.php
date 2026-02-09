@@ -12,18 +12,55 @@ class PsychotestLink extends Model
         'applicant_email',
         'expires_at',
         'used_at',
+        'started_at',
+        'finished_at',
         'results',
     ];
 
     protected $casts = [
         'expires_at' => 'datetime',
         'used_at' => 'datetime',
+        'started_at' => 'datetime',
+        'finished_at' => 'datetime',
         'results' => 'array',
     ];
 
+    public function getDurationAttribute()
+    {
+        if (!$this->started_at || !$this->finished_at) {
+            return null;
+        }
+
+        return $this->started_at->diffForHumans($this->finished_at, true);
+    }
+
+    public function getDurationSecondsAttribute()
+    {
+        if (!$this->started_at || !$this->finished_at) {
+            return 0;
+        }
+
+        return $this->started_at->diffInSeconds($this->finished_at);
+    }
+
+    const SESSION_DURATION_SECONDS = 60 * 10; // 30 seconds for testing, should be 1 * 60 for production
+
     public function isExpired()
     {
-        return $this->expires_at->isPast();
+        // Global link expiration (24h)
+        if ($this->expires_at->isPast()) {
+            return true;
+        }
+
+        // Session expiration (X seconds after started_at)
+        if ($this->started_at) {
+            $elapsedSeconds = $this->started_at->diffInSeconds(now());
+            if ($elapsedSeconds >= self::SESSION_DURATION_SECONDS) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public function isUsed()

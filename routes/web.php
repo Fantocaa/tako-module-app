@@ -10,6 +10,7 @@ use App\Http\Controllers\PositionController;
 use App\Http\Controllers\PsychotestController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TagController;
+use App\Http\Controllers\TestController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
@@ -27,9 +28,12 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::get('dashboard', function () {
         return Inertia::render('dashboard');
     })->name('dashboard');
-    
+    Route::prefix('admin')->middleware(['auth','verified','menu.permission'])->group(function () {
+
+    });
+
     // Redirect authenticated users to courses by default
-    Route::redirect('/', '/courses');
+    Route::redirect(uri: '/', destination: '/courses');
     
     Route::resource('transactions', TransactionController::class);
     Route::resource('roles', RoleController::class);
@@ -55,12 +59,17 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     // Psychotest Admin/Testing Routes
     Route::get('/psychotest-admin', [PsychotestController::class, 'index'])->name('psychotest.index');
     Route::post('/psychotest-admin', [PsychotestController::class, 'store'])->name('psychotest.store');
+    Route::get('/psychotest-admin/{uuid}/report', [PsychotestController::class, 'report'])->name('psychotest.report');
+    Route::get('/psychotest-admin/{uuid}/pdf', [PsychotestController::class, 'downloadPdf'])->name('psychotest.pdf');
+    Route::post('/psychotest-admin/{uuid}/restart', [PsychotestController::class, 'restart'])->name('psychotest.restart');
 });
 
 // Applicant Psychotest Routes (Public)
+Route::get('/p/error', [PsychotestController::class, 'error'])->name('psychotest.error');
 Route::get('/p/{uuid}', [PsychotestController::class, 'testPage'])->name('psychotest.take-test');
 Route::post('/p/{uuid}/submit', [PsychotestController::class, 'submit'])->name('psychotest.submit');
-Route::get('/p/error', [PsychotestController::class, 'error'])->name('psychotest.error');
+
+
 
 // LMS Routes - accessible to all authenticated users
 // Route::middleware(['auth', 'verified'])->group(function () {
@@ -78,3 +87,4 @@ Route::get('/p/error', [PsychotestController::class, 'error'])->name('psychotest
 // });
 
 require __DIR__ . '/settings.php';
+require __DIR__ . '/Testweb.php';

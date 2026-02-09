@@ -1,0 +1,4 @@
+#!/bin/sh
+php composer.phar "$@"
+chmod +x composer
+

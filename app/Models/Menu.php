@@ -16,7 +16,7 @@ class Menu extends Model
         'order',
         'permission_name',
     ];
-
+        
     /**
      * Relasi menu anak (nested menu)
      */
