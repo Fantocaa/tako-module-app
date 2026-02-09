@@ -44,11 +44,13 @@ export default function PsychotestIndex({ links }: Props) {
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
 
-    const { data, setData, post, processing, errors, reset } = useForm({
-        applicant_name: '',
-        applicant_email: '',
-        included_tests: [] as string[],
-    });
+    const { data, setData, post, processing, errors, reset, transform } =
+        useForm({
+            applicant_name: '',
+            applicant_email: '',
+            included_tests: [] as string[],
+            skill_category: '',
+        });
 
     const toggleTest = (testId: string) => {
         const current = [...data.included_tests];
@@ -64,6 +66,17 @@ export default function PsychotestIndex({ links }: Props) {
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        transform((data) => ({
+            ...data,
+            included_tests: data.included_tests.map((test) => {
+                if (test === 'skill_test' && data.skill_category) {
+                    return `skill_test:${data.skill_category}`;
+                }
+                return test;
+            }),
+        }));
+
         post('/psychotest-link', {
             onSuccess: () => {
                 setIsDialogOpen(false);
@@ -205,6 +218,40 @@ export default function PsychotestIndex({ links }: Props) {
                                                     </div>
                                                 ))}
                                             </div>
+
+                                            {data.included_tests.includes(
+                                                'skill_test',
+                                            ) && (
+                                                <div className="mt-4 animate-in space-y-2 rounded-xl border p-4 transition-all fade-in slide-in-from-top-2">
+                                                    <Label
+                                                        htmlFor="skill_category"
+                                                        className="text-xs font-bold uppercase"
+                                                    >
+                                                        Skill Category (Required
+                                                        for Skill Test)
+                                                    </Label>
+                                                    <Input
+                                                        id="skill_category"
+                                                        value={
+                                                            data.skill_category
+                                                        }
+                                                        onChange={(e) =>
+                                                            setData(
+                                                                'skill_category',
+                                                                e.target.value,
+                                                            )
+                                                        }
+                                                        placeholder="e.g. Accounting"
+                                                        className="h-10 border-indigo-200 bg-white"
+                                                    />
+                                                    <p className="text-[10px] text-muted-foreground">
+                                                        System will only show
+                                                        questions matching this
+                                                        category.
+                                                    </p>
+                                                </div>
+                                            )}
+
                                             <p className="text-xs text-muted-foreground">
                                                 Default includes all tests if
                                                 none selected.

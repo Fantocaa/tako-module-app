@@ -30,7 +30,7 @@ class PsychotestController extends Controller
     
     public function storeApi(Request $request)
     {
-        $client = auth()->user(); // system client
+        $client = $request->user(); // system client
 
         $data = $request->validate([
             'name' => 'required|string',
@@ -68,7 +68,7 @@ class PsychotestController extends Controller
             'applicant_name' => 'required|string|max:255',
             'applicant_email' => 'nullable|email',
             'included_tests' => 'nullable|array',
-            'included_tests.*' => 'string|in:cfit,disc,papicostic,skill_test',
+            'included_tests.*' => 'required|string',
         ]);
 
         $link = PsychotestLink::create([
@@ -100,15 +100,24 @@ class PsychotestController extends Controller
             'papicostic' => 1,
             'cfit' => 2,
             'disc' => 3,
-            'skill_test' => 4 // Assuming skill test is 4 if needed
+            'skill_test' => 4
         ];
         
         // Filter allowed sessions based on included_tests
         $allowedSessions = [1, 2, 3]; // Default all
+        $skillCategory = null;
+
         if (!empty($link->included_tests)) {
             $allowedSessions = collect($link->included_tests)
-                ->map(fn($type) => $testTypeToSession[$type] ?? null)
+                ->map(function($type) use ($testTypeToSession, &$skillCategory) {
+                    if (str_starts_with($type, 'skill_test:')) {
+                        $skillCategory = str_replace('skill_test:', '', $type);
+                        return $testTypeToSession['skill_test'];
+                    }
+                    return $testTypeToSession[$type] ?? null;
+                })
                 ->filter()
+                ->unique()
                 ->values()
                 ->toArray();
         }
@@ -119,7 +128,7 @@ class PsychotestController extends Controller
                 'link' => array_merge($link->toArray(), [
                     'allowed_sessions' => $allowedSessions // Pass allowed sessions to frontend
                 ]),
-                'currentSession' => $link->last_completed_session
+                'currentSession' => (int) ($link->last_completed_session ?? 0)
             ]);
         }
 
@@ -162,21 +171,26 @@ class PsychotestController extends Controller
             ]);
         }
         
-        // Fetch questions for this session and section
-        $questions = PsychotestQuestion::where('session_number', $session)
-            ->where('section_number', $currentSection)
+        // Fetch questions for this session (all sections)
+        $query = PsychotestQuestion::where('session_number', $session);
+
+        // Filter by skill category if its a skill test
+        if ($session === (int) ($testTypeToSession['skill_test'] ?? 4) && $skillCategory) {
+            $query->where('content->skill_category', 'LIKE', '%' . $skillCategory . '%');
+        }
+
+        $questions = $query->orderBy('section_number')
             ->orderBy('question_number')
             ->get();
 
         if ($questions->isEmpty()) {
-             // If we requested a section that has no questions, it might mean we're done or it's a gap
-             // For now redirect back to hub if no questions found for this section
-             return redirect()->route('psychotest.take-test', $uuid)
+            return redirect()
+                ->route('psychotest.take-test', $uuid)
                 ->with('error', 'No questions found for this section.');
         }
             
-        // Get section duration from the first question
-        $sectionDuration = $questions->first()->section_duration ?? 600; // Default to 10 mins if not set
+        // Get section duration from the specific section question
+        $sectionDuration = $questions->where('section_number', $currentSection)->first()->section_duration ?? 600;
 
         // Server-side Timer Persistence per section
         $results = $link->results ?? [];
@@ -224,8 +238,10 @@ class PsychotestController extends Controller
         }
 
         $request->validate([
-            'answers' => 'required|array',
-            'session' => 'required|integer'
+            'answers' => 'nullable|array',
+            'session' => 'required|integer',
+            'files' => 'nullable|array',
+            'files.*' => 'file|max:20480', // 20MB limit
         ]);
         
         $session = $request->session;
@@ -244,10 +260,23 @@ class PsychotestController extends Controller
         }
 
         // Update answers
-        $currentResults["session_{$session}"]['answers'] = array_merge(
-            $currentResults["session_{$session}"]['answers'] ?? [],
-            $request->answers
-        );
+        $answers = $request->answers ?? [];
+
+        // Handle File Uploads
+        if ($request->hasFile('files')) {
+            foreach ($request->file('files') as $questionId => $file) {
+                $path = $file->store("psychotest/submissions/{$uuid}/session_{$session}", 'public');
+                $answers[$questionId] = [
+                    'file_path' => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                    'uploaded_at' => now()->toDateTimeString(),
+                    'full_url' => asset('storage/' . $path)
+                ];
+            }
+        }
+
+        // Preserve numeric keys (Question IDs) by using + instead of array_merge
+        $currentResults["session_{$session}"]['answers'] = ($currentResults["session_{$session}"]['answers'] ?? []) + $answers;
         
         $updateData = [];
 
@@ -285,8 +314,14 @@ class PsychotestController extends Controller
             $allowedSessions = [1, 2, 3, 4];
             if (!empty($link->included_tests)) {
                 $allowedSessions = collect($link->included_tests)
-                    ->map(fn($type) => $testTypeToSession[$type] ?? null)
+                    ->map(function($type) use ($testTypeToSession) {
+                        if (str_starts_with($type, 'skill_test:')) {
+                            return $testTypeToSession['skill_test'];
+                        }
+                        return $testTypeToSession[$type] ?? null;
+                    })
                     ->filter()
+                    ->unique()
                     ->values()
                     ->toArray();
             }

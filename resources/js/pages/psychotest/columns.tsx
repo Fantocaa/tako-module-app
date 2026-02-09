@@ -28,6 +28,7 @@ export interface PsychotestLink {
     expires_at: string;
     started_at: string | null;
     used_at: string | null;
+    finished_at: string | null;
     duration: string | null;
     is_expired: boolean;
     results: any | null;
@@ -63,29 +64,15 @@ export const columns: ColumnDef<PsychotestLink>[] = [
             const link = row.original;
 
             // 1. Completed: Finished or Used
-            if (
-                link.used_at ||
-                (link.results && Object.keys(link.results).length > 0)
-            ) {
-                const isFinished =
-                    !!link.used_at ||
-                    (link.results &&
-                        Object.keys(link.results).some(
-                            (k) =>
-                                k.startsWith('session_') &&
-                                link.results[k].completed_at,
-                        ));
-
-                if (link.used_at || isFinished) {
-                    return (
-                        <Badge
-                            variant="default"
-                            className="bg-green-500 text-white"
-                        >
-                            Completed
-                        </Badge>
-                    );
-                }
+            if (link.finished_at || link.used_at) {
+                return (
+                    <Badge
+                        variant="default"
+                        className="bg-green-500 text-white"
+                    >
+                        Completed
+                    </Badge>
+                );
             }
 
             // 2. Timed Out: Session expired

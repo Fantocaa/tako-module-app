@@ -9,7 +9,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { router, useForm } from '@inertiajs/react';
+import { useForm } from '@inertiajs/react';
 import {
     ClipboardList,
     FileText,
@@ -28,25 +28,36 @@ import React, { useEffect, useState } from 'react';
 interface QuestionFormProps {
     question?: any;
     mode: 'create' | 'edit';
+    onSuccess?: () => void;
+    onCancel?: () => void;
 }
 
 interface FormState {
     test_type: string;
-    session_number: number;
-    section_number: string | number;
-    section_duration: string | number;
-    question_number: string | number;
+    skill_category: string;
+    session_number: number | string;
+    section_number: number | string;
+    section_duration: number | string;
+    question_number: number | string;
     type: string;
     content_text: string;
     content_text2: string;
+    content_file_url: string;
+    template_file: File | null;
     options: { id: string; text: string }[];
 }
 
-export default function QuestionForm({ question, mode }: QuestionFormProps) {
+export default function QuestionForm({
+    question,
+    mode,
+    onSuccess,
+    onCancel,
+}: QuestionFormProps) {
     const { data, setData, post, put, processing, errors, transform } =
         useForm<FormState>({
             test_type: question?.test_type || 'disc',
-            session_number: question?.session_number || 3,
+            skill_category: question?.content?.skill_category || '',
+            session_number: question?.session_number || 1,
             section_number: question?.section_number || '',
             section_duration: question?.section_duration
                 ? Math.floor(question.section_duration / 60)
@@ -56,6 +67,8 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
             // Content helpers
             content_text: question?.content?.text || '',
             content_text2: question?.content?.text2 || '', // For comparison
+            content_file_url: question?.content?.file_url || '', // For file assignment
+            template_file: null,
             // Options helper (array of objects)
             options:
                 question?.options ||
@@ -73,7 +86,7 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
             setData((d) => ({
                 ...d,
                 session_number: 1,
-                type: 'forced',
+                type: 'choice', // Changed from 'forced' to 'choice'
             }));
         }
         if (data.test_type === 'cfit') {
@@ -95,6 +108,13 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                 type: 'disc',
             }));
         }
+        if (data.test_type === 'skill_test') {
+            setData((d) => ({
+                ...d,
+                session_number: 4,
+                type: 'file_assignment',
+            }));
+        }
     }, [data.test_type]);
 
     // Initialize options based on type
@@ -107,7 +127,8 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                     { id: '3', text: '' },
                     { id: '4', text: '' },
                 ]);
-            } else if (data.type === 'forced') {
+            } else if (data.type === 'choice') {
+                // Changed from 'forced' to 'choice'
                 setData('options', [
                     { id: 'a', text: '' },
                     { id: 'b', text: '' },
@@ -117,6 +138,8 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                     { id: 's', text: 'S (Sama)' },
                     { id: 'ts', text: 'TS (Tidak Sama)' },
                 ]);
+            } else if (data.type === 'file_assignment') {
+                setData('options', []); // File assignment typically has no options
             }
         }
     }, [data.type]);
@@ -132,29 +155,44 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
 
         setIsSubmitting(true);
 
-        const payload = {
+        const isUpdate = mode === 'edit';
+        const url = isUpdate
+            ? `/psychotest-questions/${question.id}`
+            : '/psychotest-questions';
+
+        // We use transform to prepare the payload before Inertia sends it
+        transform((data) => ({
             ...data,
+            _method: isUpdate ? 'PUT' : 'POST',
             section_number: data.section_number
                 ? parseInt(data.section_number as string)
                 : null,
             section_duration: data.section_duration
                 ? parseInt(data.section_duration as string) * 60
                 : null,
-            content: {
-                text: data.content_text,
-                text2: data.content_text2,
-            },
-        };
+            content:
+                data.test_type === 'skill_test'
+                    ? {
+                          skill_category: data.skill_category,
+                          text: data.content_text,
+                          file_url: data.content_file_url, // Keep legacy if provided
+                      }
+                    : {
+                          text: data.content_text,
+                          text2: data.content_text2,
+                      },
+        }));
 
-        if (mode === 'edit') {
-            router.put(`/psychotest-questions/${question.id}`, payload, {
-                onFinish: () => setIsSubmitting(false),
-            });
-        } else {
-            router.post('/psychotest-questions', payload, {
-                onFinish: () => setIsSubmitting(false),
-            });
-        }
+        post(url, {
+            forceFormData: true,
+            onSuccess: () => {
+                if (onSuccess) onSuccess();
+            },
+            onFinish: () => setIsSubmitting(false),
+            onError: (errors) => {
+                console.error('Submission Errors:', errors);
+            },
+        });
     };
 
     const addOption = () => {
@@ -181,10 +219,7 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
     };
 
     return (
-        <form
-            onSubmit={handleSubmit}
-            className="mx-auto max-w-5xl space-y-8 pb-12"
-        >
+        <form onSubmit={handleSubmit} className="space-y-6 pb-4">
             {/* Section 1: Assessment Profiling */}
             <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:shadow-md">
                 <div className="flex items-center gap-3 border-b border-border bg-muted/30 px-6 py-4">
@@ -219,6 +254,9 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                                     Papicostic
                                 </SelectItem>
                                 <SelectItem value="cfit">CFIT</SelectItem>
+                                <SelectItem value="skill_test">
+                                    Skill Test
+                                </SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -322,9 +360,14 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                                     </SelectItem>
                                 )}
                                 {data.test_type === 'papicostic' && (
-                                    <SelectItem value="forced">
-                                        Forced Choice (A / B)
-                                    </SelectItem>
+                                    <>
+                                        <SelectItem value="choice">
+                                            Multiple Choice
+                                        </SelectItem>
+                                        <SelectItem value="file_assignment">
+                                            File Assignment (Download/Upload)
+                                        </SelectItem>
+                                    </>
                                 )}
                                 {data.test_type === 'cfit' && (
                                     <>
@@ -338,6 +381,11 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                                             Image Comparison
                                         </SelectItem>
                                     </>
+                                )}
+                                {data.test_type === 'skill_test' && (
+                                    <SelectItem value="file_assignment">
+                                        File Assignment (Download/Upload)
+                                    </SelectItem>
                                 )}
                             </SelectContent>
                         </Select>
@@ -362,6 +410,32 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                 </div>
 
                 <div className="p-6">
+                    {/* Skill Category (Conditionally rendered) */}
+                    {data.test_type === 'skill_test' && (
+                        <div className="mb-6 space-y-2">
+                            <Label
+                                htmlFor="skill_category"
+                                className="text-xs font-semibold text-muted-foreground uppercase"
+                            >
+                                Skill Category
+                            </Label>
+                            <Input
+                                id="skill_category"
+                                value={data.skill_category}
+                                onChange={(e) =>
+                                    setData('skill_category', e.target.value)
+                                }
+                                placeholder="e.g. Accounting, Document, etc."
+                                className="h-11 border-border bg-background focus:ring-ring"
+                            />
+                            {errors.skill_category && (
+                                <p className="text-sm text-destructive">
+                                    {errors.skill_category}
+                                </p>
+                            )}
+                        </div>
+                    )}
+
                     {data.type === 'comparison' ? (
                         <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
@@ -392,24 +466,86 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
                             </div>
                         </div>
                     ) : (
-                        <div className="space-y-2">
-                            <Label className="text-xs font-semibold text-muted-foreground">
-                                {data.type === 'disc'
-                                    ? 'Optional Header Text'
-                                    : 'Question Prompt'}
-                            </Label>
-                            <Textarea
-                                placeholder={
-                                    data.type === 'disc'
-                                        ? 'e.g. Choose one most and one least...'
-                                        : 'e.g. Which shape follows the pattern?'
-                                }
-                                value={data.content_text}
-                                onChange={(e) =>
-                                    setData('content_text', e.target.value)
-                                }
-                                className="min-h-[100px] border-border bg-background focus:ring-ring"
-                            />
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Label className="text-xs font-semibold text-muted-foreground">
+                                    {data.type === 'disc'
+                                        ? 'Optional Header Text'
+                                        : 'Question Prompt / Instructions'}
+                                </Label>
+                                <Textarea
+                                    placeholder={
+                                        data.type === 'disc'
+                                            ? 'e.g. Choose one most and one least...'
+                                            : 'e.g. Silakan download file di bawah ini dan kerjakan...'
+                                    }
+                                    value={data.content_text}
+                                    onChange={(e) =>
+                                        setData('content_text', e.target.value)
+                                    }
+                                    className="min-h-[100px] border-border bg-background focus:ring-ring"
+                                />
+                            </div>
+
+                            {data.type === 'file_assignment' && (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="template_file"
+                                            className="text-xs font-semibold text-muted-foreground uppercase"
+                                        >
+                                            {question?.content?.file_path
+                                                ? 'Change Template File'
+                                                : 'Upload Template File'}
+                                        </Label>
+                                        <div className="flex flex-col gap-2">
+                                            <Input
+                                                id="template_file"
+                                                type="file"
+                                                onChange={(e) =>
+                                                    setData(
+                                                        'template_file',
+                                                        e.target.files?.[0] ||
+                                                            null,
+                                                    )
+                                                }
+                                                className="h-11 border-border bg-background pt-2 focus:ring-ring"
+                                            />
+                                            {question?.content?.file_path && (
+                                                <p className="text-[10px] font-bold text-blue-600">
+                                                    Current file:{' '}
+                                                    {question.content.file_path}
+                                                </p>
+                                            )}
+                                        </div>
+                                        <p className="text-[10px] text-muted-foreground">
+                                            Upload Word/Excel template for
+                                            candidate download.
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <Label
+                                            htmlFor="content_file_url_legacy"
+                                            className="text-xs font-semibold text-muted-foreground uppercase"
+                                        >
+                                            Or Template URL (Optional)
+                                        </Label>
+                                        <Input
+                                            id="content_file_url_legacy"
+                                            value={data.content_file_url}
+                                            onChange={(e) =>
+                                                setData(
+                                                    'content_file_url',
+                                                    e.target.value,
+                                                )
+                                            }
+                                            placeholder="https://example.com/file.xlsx"
+                                            className="h-11 border-border bg-background focus:ring-ring"
+                                        />
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -496,21 +632,24 @@ export default function QuestionForm({ question, mode }: QuestionFormProps) {
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center justify-between border-t border-border pt-8">
+            <div className="flex items-center justify-end gap-4 pt-8">
                 <Button
                     type="button"
                     variant="ghost"
-                    onClick={() => window.history.back()}
+                    onClick={() => {
+                        if (onCancel) onCancel();
+                        else window.history.back();
+                    }}
                     className="text-muted-foreground hover:text-foreground"
                 >
                     <Undo2 className="mr-2 h-4 w-4" />
-                    Discard Changes
+                    {onCancel ? 'Cancel' : 'Discard Changes'}
                 </Button>
                 <div className="flex gap-4">
                     <Button
                         type="submit"
                         disabled={isSubmitting}
-                        className="h-11 min-w-[160px] bg-indigo-600 shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 dark:shadow-none"
+                        className="min-w-[160px]"
                     >
                         {isSubmitting ? (
                             'Saving...'

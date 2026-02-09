@@ -73,14 +73,15 @@ export default function PsychotestHub({ link, currentSession }: Props) {
 
     // Determine the next session the user should take
     const nextSessionId = allowedSessionIds
-        .sort()
-        .find((id: number) => id > currentSession);
-    const isTotallyDone = !nextSessionId;
+        .sort((a: number, b: number) => a - b)
+        .find((id: number) => id > (currentSession || 0));
+
+    const isTotallyDone = !nextSessionId || !!link.finished_at;
 
     const handleStart = () => {
         if (startingSession) {
             router.get(
-                `/psychotest-link/${link.uuid}?session=${startingSession.id}`,
+                `/psychotest/${link.uuid}?session=${startingSession.id}`,
             );
         }
     };

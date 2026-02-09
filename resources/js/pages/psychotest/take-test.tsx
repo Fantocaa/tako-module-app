@@ -6,7 +6,7 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import { Head, router, useForm } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import React from 'react';
 
 interface PsychotestLink {
@@ -55,13 +55,15 @@ export default function TakeTest({
     savedAnswers = {},
 }: Props) {
     const [timeLeft, setTimeLeft] = React.useState(remainingTime);
-    const { data, setData, post, processing } = useForm<{
+    const { data, setData, post, processing, transform } = useForm<{
         answers: Record<string, any>;
+        files: Record<string, File>;
         session: number;
         current_section: number;
         is_final: boolean;
     }>({
         answers: savedAnswers,
+        files: {},
         session: session,
         current_section: currentSection,
         is_final: false,
@@ -124,20 +126,29 @@ export default function TakeTest({
         });
     };
 
+    const handleFileChange = (questionId: number, file: File | null) => {
+        if (file) {
+            setData('files', {
+                ...data.files,
+                [questionId]: file,
+            });
+        }
+    };
+
     const [isSubmitting, setIsSubmitting] = React.useState(false);
 
     const autoSubmit = () => {
         setIsSubmitting(true);
-        router.post(
-            `/psychotest-link/${link.uuid}/submit`,
-            {
-                ...data,
-                is_final: true,
-            },
-            {
-                onFinish: () => setIsSubmitting(false),
-            },
-        );
+
+        transform((data) => ({
+            ...data,
+            is_final: isLastSection,
+        }));
+
+        post(`/psychotest/${link.uuid}/submit`, {
+            forceFormData: true,
+            onFinish: () => setIsSubmitting(false),
+        });
     };
 
     // Group questions into sections
@@ -176,13 +187,18 @@ export default function TakeTest({
         activeSection?.secNum === sections[sections.length - 1]?.secNum;
 
     const isAllAnswered = activeSection?.questions.every((q) => {
-        const answer = data.answers[q.id];
         if (q.type === 'disc') {
+            const answer = data.answers[q.id];
             return answer?.most && answer?.least;
         }
         if (q.type === 'checkbox') {
+            const answer = data.answers[q.id];
             return (answer as string[])?.length === 2;
         }
+        if (q.type === 'file_assignment') {
+            return data.files[q.id] || data.answers[q.id]?.file_path;
+        }
+        const answer = data.answers[q.id];
         return answer !== undefined && answer !== null && answer !== '';
     });
 
@@ -191,21 +207,21 @@ export default function TakeTest({
 
         setIsSubmitting(true);
 
-        router.post(
-            `/psychotest-link/${link.uuid}/submit`,
-            {
-                ...data,
-                is_final: isLastSection,
+        // Prepare the data before posting
+        transform((data) => ({
+            ...data,
+            is_final: isLastSection,
+        }));
+
+        post(`/psychotest/${link.uuid}/submit`, {
+            onFinish: () => setIsSubmitting(false),
+            forceFormData: true,
+            onSuccess: () => {
+                if (!isLastSection) {
+                    setData('current_section', data.current_section + 1);
+                }
             },
-            {
-                onFinish: () => setIsSubmitting(false),
-                onSuccess: () => {
-                    if (!isLastSection) {
-                        setData('current_section', data.current_section + 1);
-                    }
-                },
-            },
-        );
+        });
     };
 
     return (
@@ -442,6 +458,113 @@ export default function TakeTest({
                                                                             )}
                                                                         </tbody>
                                                                     </table>
+                                                                </div>
+                                                            ) : q.type ===
+                                                              'file_assignment' ? (
+                                                                <div className="space-y-6">
+                                                                    <div className="flex items-start gap-4">
+                                                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-indigo-500/10 text-sm font-black text-indigo-500">
+                                                                            {idx +
+                                                                                1}
+                                                                        </div>
+                                                                        <div className="space-y-2">
+                                                                            <h3 className="text-xl leading-snug font-bold text-foreground">
+                                                                                {text ||
+                                                                                    'File Assignment'}
+                                                                            </h3>
+                                                                            <p className="text-sm text-muted-foreground">
+                                                                                Silakan
+                                                                                download
+                                                                                file
+                                                                                template,
+                                                                                kerjakan,
+                                                                                lalu
+                                                                                upload
+                                                                                kembali
+                                                                                hasilnya.
+                                                                            </p>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+                                                                        <div className="rounded-2xl border-2 border-dashed border-border bg-muted/20 p-6 text-center shadow-inner">
+                                                                            <p className="mb-4 text-xs font-bold tracking-widest text-muted-foreground uppercase">
+                                                                                1.
+                                                                                Download
+                                                                                Template
+                                                                            </p>
+                                                                            <Button
+                                                                                type="button"
+                                                                                variant="outline"
+                                                                                className="h-12 w-full rounded-xl bg-white font-bold"
+                                                                                onClick={() =>
+                                                                                    window.open(
+                                                                                        q
+                                                                                            .content
+                                                                                            ?.file_url,
+                                                                                        '_blank',
+                                                                                    )
+                                                                                }
+                                                                                disabled={
+                                                                                    !q
+                                                                                        .content
+                                                                                        ?.file_url
+                                                                                }
+                                                                            >
+                                                                                Download
+                                                                                Soal
+                                                                            </Button>
+                                                                        </div>
+
+                                                                        <div className="rounded-2xl border-2 border-dashed border-indigo-200 bg-indigo-50/30 p-6 text-center shadow-inner">
+                                                                            <p className="mb-4 text-xs font-bold tracking-widest text-indigo-600 uppercase">
+                                                                                2.
+                                                                                Upload
+                                                                                Jawaban
+                                                                            </p>
+                                                                            <div className="relative">
+                                                                                <input
+                                                                                    type="file"
+                                                                                    id={`file_${q.id}`}
+                                                                                    className="absolute inset-0 cursor-pointer opacity-0"
+                                                                                    onChange={(
+                                                                                        e,
+                                                                                    ) =>
+                                                                                        handleFileChange(
+                                                                                            q.id,
+                                                                                            e
+                                                                                                .target
+                                                                                                .files?.[0] ||
+                                                                                                null,
+                                                                                        )
+                                                                                    }
+                                                                                />
+                                                                                <Button
+                                                                                    type="button"
+                                                                                    className="h-12 w-full rounded-xl bg-indigo-600 font-bold hover:bg-amber-600"
+                                                                                >
+                                                                                    {data
+                                                                                        .files[
+                                                                                        q
+                                                                                            .id
+                                                                                    ]
+                                                                                        ? data
+                                                                                              .files[
+                                                                                              q
+                                                                                                  .id
+                                                                                          ]
+                                                                                              .name
+                                                                                        : data
+                                                                                              .answers[
+                                                                                              q
+                                                                                                  .id
+                                                                                          ]
+                                                                                              ?.original_name ||
+                                                                                          'Pilih File...'}
+                                                                                </Button>
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
                                                                 </div>
                                                             ) : (
                                                                 <div className="space-y-6">

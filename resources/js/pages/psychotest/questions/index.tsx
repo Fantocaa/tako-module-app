@@ -2,6 +2,13 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
+import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
@@ -10,10 +17,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import {
     ColumnDef,
     ColumnFiltersState,
@@ -28,6 +36,7 @@ import {
 import { Edit, MoreHorizontal, Plus, Search, Trash } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import QuestionForm from './form';
 
 interface PsychotestQuestion {
     id: number;
@@ -51,107 +60,112 @@ const breadcrumbs: BreadcrumbItem[] = [
     },
 ];
 
-// --- Columns ---
-
-export const columns: ColumnDef<PsychotestQuestion>[] = [
-    {
-        accessorKey: 'test_type',
-        header: 'Test Type',
-        cell: ({ row }) => (
-            <Badge variant="outline">
-                {row.original.test_type.toUpperCase()}
-            </Badge>
-        ),
-    },
-    {
-        accessorKey: 'session_number',
-        header: 'Session',
-        cell: ({ row }) => row.original.session_number,
-    },
-    {
-        accessorKey: 'question_number',
-        header: 'No.',
-        cell: ({ row }) => row.original.question_number,
-    },
-    {
-        accessorKey: 'type',
-        header: 'Type',
-        cell: ({ row }) => row.original.type,
-    },
-    {
-        accessorKey: 'content',
-        header: 'Content',
-        cell: ({ row }) => {
-            const content = row.original.content;
-            return (
-                <div className="max-w-[300px] truncate text-xs text-muted-foreground">
-                    {content?.text
-                        ? content.text
-                        : content
-                          ? JSON.stringify(content)
-                          : '-'}
-                </div>
-            );
-        },
-    },
-    {
-        id: 'actions',
-        cell: ({ row }) => {
-            const question = row.original;
-            return (
-                <div className="text-right">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem asChild>
-                                <Link
-                                    href={`/psychotest-questions/${question.id}/edit`}
-                                >
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                </Link>
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                                className="text-red-600 focus:bg-red-50 focus:text-red-600"
-                                onClick={() => {
-                                    if (
-                                        confirm(
-                                            'Are you sure you want to delete this question?',
-                                        )
-                                    ) {
-                                        router.delete(
-                                            `/psychotest-questions/${question.id}`,
-                                            {
-                                                onSuccess: () =>
-                                                    toast.success(
-                                                        'Question deleted',
-                                                    ),
-                                            },
-                                        );
-                                    }
-                                }}
-                            >
-                                <Trash className="mr-2 h-4 w-4" />
-                                Delete
-                            </DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </div>
-            );
-        },
-    },
-];
+// --- Columns were moved into the component to access state ---
 
 export default function QuestionsIndex({ questions }: Props) {
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
     const [sorting, setSorting] = useState<SortingState>([]);
+    const [isCreateOpen, setIsCreateOpen] = useState(false);
+    const [isEditOpen, setIsEditOpen] = useState(false);
+    const [editingQuestion, setEditingQuestion] =
+        useState<PsychotestQuestion | null>(null);
+
+    const columns: ColumnDef<PsychotestQuestion>[] = [
+        {
+            accessorKey: 'test_type',
+            header: 'Test Type',
+            cell: ({ row }) => (
+                <Badge variant="outline">
+                    {row.original.test_type.toUpperCase()}
+                </Badge>
+            ),
+        },
+        {
+            accessorKey: 'session_number',
+            header: 'Session',
+            cell: ({ row }) => row.original.session_number,
+        },
+        {
+            accessorKey: 'question_number',
+            header: 'No.',
+            cell: ({ row }) => row.original.question_number,
+        },
+        {
+            accessorKey: 'type',
+            header: 'Type',
+            cell: ({ row }) => row.original.type,
+        },
+        {
+            accessorKey: 'content',
+            header: 'Content',
+            cell: ({ row }) => {
+                const content = row.original.content;
+                return (
+                    <div className="max-w-[300px] truncate text-xs text-muted-foreground">
+                        {content?.text
+                            ? content.text
+                            : content
+                              ? JSON.stringify(content)
+                              : '-'}
+                    </div>
+                );
+            },
+        },
+        {
+            id: 'actions',
+            cell: ({ row }) => {
+                const question = row.original;
+                return (
+                    <div className="text-right">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem
+                                    onClick={() => {
+                                        setEditingQuestion(question);
+                                        setIsEditOpen(true);
+                                    }}
+                                >
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                    className="text-red-600 focus:bg-red-50 focus:text-red-600"
+                                    onClick={() => {
+                                        if (
+                                            confirm(
+                                                'Are you sure you want to delete this question?',
+                                            )
+                                        ) {
+                                            router.delete(
+                                                `/psychotest-questions/${question.id}`,
+                                                {
+                                                    onSuccess: () =>
+                                                        toast.success(
+                                                            'Question deleted',
+                                                        ),
+                                                },
+                                            );
+                                        }
+                                    }}
+                                >
+                                    <Trash className="mr-2 h-4 w-4" />
+                                    Delete
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                );
+            },
+        },
+    ];
 
     // Table Instance
     const table = useReactTable({
@@ -201,14 +215,69 @@ export default function QuestionsIndex({ questions }: Props) {
                                     className="w-40 pl-9"
                                 />
                             </div>
-                            <Link href="/psychotest-questions/create">
-                                <Button>
-                                    <Plus className="mr-2 h-4 w-4" />
-                                    Add Question
-                                </Button>
-                            </Link>
+                            <Button onClick={() => setIsCreateOpen(true)}>
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add Question
+                            </Button>
                         </div>
                     </CardHeader>
+
+                    {/* Create Dialog */}
+                    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
+                        <DialogContent className="max-h-[90vh] w-full p-0 sm:max-w-6xl">
+                            <DialogHeader className="p-6 pb-0">
+                                <DialogTitle>Add New Question</DialogTitle>
+                                <DialogDescription>
+                                    Create a new question for the psychotest
+                                    assessment.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <ScrollArea className="max-h-[calc(90vh-120px)] p-6">
+                                <QuestionForm
+                                    mode="create"
+                                    onSuccess={() => {
+                                        setIsCreateOpen(false);
+                                        toast.success(
+                                            'Question created successfully',
+                                        );
+                                    }}
+                                    onCancel={() => setIsCreateOpen(false)}
+                                />
+                            </ScrollArea>
+                        </DialogContent>
+                    </Dialog>
+
+                    {/* Edit Dialog */}
+                    <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                        <DialogContent className="max-h-[90vh] w-full p-0 sm:max-w-6xl">
+                            <DialogHeader className="p-6 pb-0">
+                                <DialogTitle>Edit Question</DialogTitle>
+                                <DialogDescription>
+                                    Modify the question details and response
+                                    options.
+                                </DialogDescription>
+                            </DialogHeader>
+                            <ScrollArea className="max-h-[calc(90vh-120px)] p-6">
+                                {editingQuestion && (
+                                    <QuestionForm
+                                        mode="edit"
+                                        question={editingQuestion}
+                                        onSuccess={() => {
+                                            setIsEditOpen(false);
+                                            setEditingQuestion(null);
+                                            toast.success(
+                                                'Question updated successfully',
+                                            );
+                                        }}
+                                        onCancel={() => {
+                                            setIsEditOpen(false);
+                                            setEditingQuestion(null);
+                                        }}
+                                    />
+                                )}
+                            </ScrollArea>
+                        </DialogContent>
+                    </Dialog>
                     <Separator />
                     <CardContent className="pt-6">
                         <div className="rounded-md border">

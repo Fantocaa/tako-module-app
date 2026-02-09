@@ -24,10 +24,12 @@ class PsychotestQuestionController extends Controller
         ]);
     }
 
+    /*
     public function create()
     {
         return Inertia::render('psychotest/questions/create');
     }
+    */
 
     /**
      * Store a newly created resource in storage.
@@ -42,8 +44,19 @@ class PsychotestQuestionController extends Controller
             'question_number' => 'required|integer',
             'type' => 'required|string',
             'content' => 'nullable|array',
-            'options' => 'required|array',
+            'options' => 'nullable|array',
+            'template_file' => 'nullable|file|max:10240', // 10MB
         ]);
+
+        $content = $validated['content'] ?? [];
+
+        if ($request->hasFile('template_file')) {
+            $path = $request->file('template_file')->store('psychotest/templates', 'public');
+            $content['file_path'] = $path;
+            $content['file_url'] = asset('storage/' . $path);
+        }
+
+        $validated['content'] = $content;
 
         PsychotestQuestion::create($validated);
 
@@ -56,12 +69,14 @@ class PsychotestQuestionController extends Controller
         //
     }
 
+    /*
     public function edit(PsychotestQuestion $psychotestQuestion)
     {
        return Inertia::render('psychotest/questions/edit', [
             'question' => $psychotestQuestion
        ]);
     }
+    */
 
     /**
      * Update the specified resource in storage.
@@ -76,8 +91,19 @@ class PsychotestQuestionController extends Controller
             'question_number' => 'required|integer',
             'type' => 'required|string',
             'content' => 'nullable|array',
-            'options' => 'required|array',
+            'options' => 'nullable|array',
+            'template_file' => 'nullable|file|max:10240',
         ]);
+
+        $content = array_merge($psychotestQuestion->content ?? [], $validated['content'] ?? []);
+
+        if ($request->hasFile('template_file')) {
+            $path = $request->file('template_file')->store('psychotest/templates', 'public');
+            $content['file_path'] = $path;
+            $content['file_url'] = asset('storage/' . $path);
+        }
+
+        $validated['content'] = $content;
 
         $psychotestQuestion->update($validated);
 
