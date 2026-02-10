@@ -119,7 +119,16 @@ export default function QuestionForm({
 
     // Initialize options based on type
     useEffect(() => {
-        if (!question && mode === 'create') {
+        // Only reset if it's a type with FIXED options structure
+        // OR if we are in create mode for flexible types
+        const isFixedType = [
+            'disc',
+            'choice',
+            'comparison',
+            'file_assignment',
+        ].includes(data.type);
+
+        if (isFixedType || (!question && mode === 'create')) {
             if (data.type === 'disc') {
                 setData('options', [
                     { id: '1', text: '' },
@@ -128,7 +137,6 @@ export default function QuestionForm({
                     { id: '4', text: '' },
                 ]);
             } else if (data.type === 'choice') {
-                // Changed from 'forced' to 'choice'
                 setData('options', [
                     { id: 'a', text: '' },
                     { id: 'b', text: '' },
@@ -139,7 +147,21 @@ export default function QuestionForm({
                     { id: 'ts', text: 'TS (Tidak Sama)' },
                 ]);
             } else if (data.type === 'file_assignment') {
-                setData('options', []); // File assignment typically has no options
+                setData('options', []);
+            } else if (
+                data.type === 'standard' ||
+                data.type === 'multiple_select'
+            ) {
+                // For flexible types, only reset if creating new
+                if (!question && mode === 'create') {
+                    setData('options', [
+                        { id: 'a', text: '' },
+                        { id: 'b', text: '' },
+                        { id: 'c', text: '' },
+                        { id: 'd', text: '' },
+                        { id: 'e', text: '' },
+                    ]);
+                }
             }
         }
     }, [data.type]);
@@ -378,7 +400,7 @@ export default function QuestionForm({
                                             Multiple Select
                                         </SelectItem>
                                         <SelectItem value="comparison">
-                                            Image Comparison
+                                            Comparison
                                         </SelectItem>
                                     </>
                                 )}
@@ -448,7 +470,7 @@ export default function QuestionForm({
                                         setData('content_text', e.target.value)
                                     }
                                     className="h-11 border-border bg-background focus:ring-ring"
-                                    placeholder="e.g. Image URL or text"
+                                    placeholder="e.g. Text content"
                                 />
                             </div>
                             <div className="space-y-2">
@@ -461,7 +483,7 @@ export default function QuestionForm({
                                         setData('content_text2', e.target.value)
                                     }
                                     className="h-11 border-border bg-background focus:ring-ring"
-                                    placeholder="e.g. Image URL or text"
+                                    placeholder="e.g. Text content"
                                 />
                             </div>
                         </div>

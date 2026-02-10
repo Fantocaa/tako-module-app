@@ -1,3 +1,12 @@
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import {
     Card,
@@ -55,6 +64,7 @@ export default function TakeTest({
     savedAnswers = {},
 }: Props) {
     const [timeLeft, setTimeLeft] = React.useState(remainingTime);
+    const [isTimeOut, setIsTimeOut] = React.useState(false);
     const { data, setData, post, processing, transform } = useForm<{
         answers: Record<string, any>;
         files: Record<string, File>;
@@ -69,9 +79,22 @@ export default function TakeTest({
         is_final: false,
     });
 
+    // Sync state when props change (e.g. after redirect to next section)
+    React.useEffect(() => {
+        setData((prev) => ({
+            ...prev,
+            session: session,
+            current_section: currentSection,
+            // answers: savedAnswers || {}, // Optional: keep answers if needed or reset
+            is_final: false,
+        }));
+        setTimeLeft(remainingTime);
+        setIsTimeOut(false);
+    }, [session, currentSection, remainingTime]);
+
     React.useEffect(() => {
         if (timeLeft <= 0) {
-            autoSubmit();
+            setIsTimeOut(true);
             return;
         }
 
@@ -147,6 +170,14 @@ export default function TakeTest({
 
         post(`/psychotest/${link.uuid}/submit`, {
             forceFormData: true,
+            onError: (errors) => {
+                setIsSubmitting(false);
+                alert(
+                    'Validation Error: ' +
+                        JSON.stringify(errors) +
+                        '\nPlease ensure all required fields are valid.',
+                );
+            },
             onFinish: () => setIsSubmitting(false),
         });
     };
@@ -593,7 +624,9 @@ export default function TakeTest({
                                                                                     type="button"
                                                                                     onClick={() =>
                                                                                         q.type ===
-                                                                                        'checkbox'
+                                                                                            'checkbox' ||
+                                                                                        q.type ===
+                                                                                            'multiple_select'
                                                                                             ? handleCheckboxChoice(
                                                                                                   q.id,
                                                                                                   option.id,
@@ -606,7 +639,9 @@ export default function TakeTest({
                                                                                     className={`group relative flex items-center gap-4 rounded-2xl border-2 p-5 transition-all duration-200 ${
                                                                                         (
                                                                                             q.type ===
-                                                                                            'checkbox'
+                                                                                                'checkbox' ||
+                                                                                            q.type ===
+                                                                                                'multiple_select'
                                                                                                 ? (
                                                                                                       data
                                                                                                           .answers[
@@ -632,13 +667,17 @@ export default function TakeTest({
                                                                                             q.type ===
                                                                                                 'standard' ||
                                                                                             q.type ===
-                                                                                                'forced'
+                                                                                                'forced' ||
+                                                                                            q.type ===
+                                                                                                'comparison'
                                                                                                 ? 'rounded-full'
                                                                                                 : 'rounded-lg'
-                                                                                        } ${(q.type === 'checkbox' ? (data.answers[q.id] as string[])?.includes(option.id) : data.answers[q.id] === option.id) ? 'scale-110 border-primary bg-primary shadow-lg shadow-primary/20' : 'border-input bg-background'}`}
+                                                                                        } ${(q.type === 'checkbox' || q.type === 'multiple_select' ? (data.answers[q.id] as string[])?.includes(option.id) : data.answers[q.id] === option.id) ? 'scale-110 border-primary bg-primary shadow-lg shadow-primary/20' : 'border-input bg-background'}`}
                                                                                     >
                                                                                         {(q.type ===
-                                                                                        'checkbox'
+                                                                                            'checkbox' ||
+                                                                                        q.type ===
+                                                                                            'multiple_select'
                                                                                             ? (
                                                                                                   data
                                                                                                       .answers[
@@ -753,6 +792,26 @@ export default function TakeTest({
                     </p>
                 </div>
             </div>
+
+            {/* Timeout Alert */}
+            <AlertDialog open={isTimeOut}>
+                <AlertDialogContent onEscapeKeyDown={(e) => e.preventDefault()}>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Thinking Time Expired!
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Your time for this subtest has ended. Please proceed
+                            to the next section immediately.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogAction onClick={autoSubmit}>
+                            {isLastSection ? 'Submit Test' : 'Next Subtest'}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
