@@ -45,6 +45,7 @@ class PsychotestQuestionController extends Controller
             'type' => 'required|string',
             'content' => 'nullable|array',
             'options' => 'nullable|array',
+            'correct_answer' => 'nullable|array',
             'template_file' => 'nullable|file|max:10240', // 10MB
         ]);
 
@@ -92,6 +93,7 @@ class PsychotestQuestionController extends Controller
             'type' => 'required|string',
             'content' => 'nullable|array',
             'options' => 'nullable|array',
+            'correct_answer' => 'nullable|array',
             'template_file' => 'nullable|file|max:10240',
         ]);
 

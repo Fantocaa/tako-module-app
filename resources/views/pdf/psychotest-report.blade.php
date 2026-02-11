@@ -88,11 +88,37 @@
     <div class="results-section">
         <h2>Test Results</h2>
         @if($link->results)
-            @foreach($link->results as $key => $value)
-                <div class="answer-card">
-                    <div class="question">Question {{ $key }}</div>
-                    <div class="answer">{{ is_array($value) ? implode(', ', $value) : $value }}</div>
-                </div>
+            @foreach($link->results as $sessionKey => $sessionData)
+                @php
+                    $sessionNum = (int) str_replace('session_', '', $sessionKey);
+                    $sessionNames = [
+                        1 => 'PAPICOSTIC',
+                        2 => 'CFIT',
+                        3 => 'DISC',
+                        4 => 'Skill Test'
+                    ];
+                    $sessionName = $sessionNames[$sessionNum] ?? "Section $sessionNum";
+                @endphp
+
+                <h3 style="margin-top: 20px; color: #6366f1; border-left: 4px solid #6366f1; padding-left: 10px;">{{ $sessionName }}</h3>
+                
+                @if(isset($sessionData['answers']) && count($sessionData['answers']) > 0)
+                    @foreach($sessionData['answers'] as $qId => $answer)
+                        <div class="answer-card">
+                            <div class="question">Question ID: {{ $qId }}</div>
+                            <div class="answer">
+                                @if($sessionNum === 4)
+                                    <strong>File:</strong> {{ $answer['original_name'] ?? 'Candidate submission' }} <br>
+                                    <span style="font-size: 0.8em; color: #666;">View online: {{ $answer['full_url'] }}</span>
+                                @else
+                                    {{ is_array($answer) ? implode(', ', $answer) : (is_array($answer) ? json_encode($answer) : $answer) }}
+                                @endif
+                            </div>
+                        </div>
+                    @endforeach
+                @else
+                    <p style="font-style: italic; color: #999; margin-left: 10px;">No answers recorded for this session.</p>
+                @endif
             @endforeach
         @else
             <p>No answers recorded.</p>

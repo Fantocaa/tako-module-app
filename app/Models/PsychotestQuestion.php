@@ -15,10 +15,12 @@ class PsychotestQuestion extends Model
         'type',
         'content',
         'options',
+        'correct_answer',
     ];
 
     protected $casts = [
         'content' => 'array',
         'options' => 'array',
+        'correct_answer' => 'array',
     ];
 }

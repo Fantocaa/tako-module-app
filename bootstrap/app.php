@@ -29,7 +29,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'menu.permission' => CheckMenuPermission::class,
         ]);
-    })
+    }) 
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();

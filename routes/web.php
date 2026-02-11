@@ -57,12 +57,13 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::get('/psychotest-link', [PsychotestController::class, 'index'])->name('psychotest.index');
     Route::post('/psychotest-link', [PsychotestController::class, 'store'])->name('psychotest.store');
     Route::get('/psychotest-link/{uuid}/report', [PsychotestController::class, 'report'])->name('psychotest.report');
-    Route::get('/psychotest-link/{uuid}/pdf', [PsychotestController::class, 'downloadPdf'])->name('psychotest.pdf');
     Route::post('/psychotest-link/{uuid}/restart', [PsychotestController::class, 'restart'])->name('psychotest.restart');
     
     // Psychotest Questions CRUD
     Route::resource('psychotest-questions', PsychotestQuestionController::class);
 });
+
+Route::get('/psychotest-link/{uuid}/pdf', [PsychotestController::class, 'downloadPdf'])->name('psychotest.pdf');
 
 // Applicant Psychotest Routes (Public)
 Route::get('/psychotest/error', [PsychotestController::class, 'error'])->name('psychotest.error');

@@ -45,6 +45,7 @@ interface FormState {
     content_file_url: string;
     template_file: File | null;
     options: { id: string; text: string }[];
+    correct_answer: string[];
 }
 
 export default function QuestionForm({
@@ -78,6 +79,7 @@ export default function QuestionForm({
                     { id: '3', text: '' },
                     { id: '4', text: '' },
                 ] as any[]),
+            correct_answer: question?.correct_answer || [],
         });
 
     // Auto-set session number and type based on test type
@@ -238,6 +240,25 @@ export default function QuestionForm({
         const newOptions = [...data.options];
         newOptions[index].id = val;
         setData('options', newOptions);
+    };
+
+    const toggleCorrectAnswer = (id: string) => {
+        const isSelected = data.correct_answer.includes(id);
+        if (isSelected) {
+            setData(
+                'correct_answer',
+                data.correct_answer.filter((item) => item !== id),
+            );
+        } else {
+            // Limit multiple_select to max 2 answers
+            if (
+                data.type === 'multiple_select' &&
+                data.correct_answer.length >= 2
+            ) {
+                return;
+            }
+            setData('correct_answer', [...data.correct_answer, id]);
+        }
     };
 
     return (
@@ -608,8 +629,54 @@ export default function QuestionForm({
                     {data.options.map((option: any, idx: number) => (
                         <div
                             key={idx}
-                            className="group flex animate-in items-end gap-4 rounded-xl border border-border bg-muted/20 p-4 transition-colors fade-in slide-in-from-top-2 hover:bg-muted/40"
+                            className={`group flex animate-in items-end gap-4 rounded-xl border p-4 transition-all fade-in slide-in-from-top-2 hover:bg-muted/40 ${
+                                data.correct_answer.includes(option.id)
+                                    ? 'border-emerald-500/50 bg-emerald-500/5'
+                                    : 'border-border bg-muted/20'
+                            }`}
                         >
+                            {/* Correct Answer Selector */}
+                            {(data.type === 'standard' ||
+                                data.type === 'comparison' ||
+                                data.type === 'multiple_select') && (
+                                <div className="mb-1 flex shrink-0 flex-col items-center gap-2">
+                                    <Label className="text-[10px] font-bold tracking-tighter text-muted-foreground uppercase">
+                                        Correct?
+                                    </Label>
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            if (
+                                                data.type === 'standard' ||
+                                                data.type === 'comparison'
+                                            ) {
+                                                const isCurrent =
+                                                    data.correct_answer.includes(
+                                                        option.id,
+                                                    );
+                                                setData(
+                                                    'correct_answer',
+                                                    isCurrent
+                                                        ? []
+                                                        : [option.id],
+                                                );
+                                            } else {
+                                                toggleCorrectAnswer(option.id);
+                                            }
+                                        }}
+                                        className={`flex h-10 w-10 items-center justify-center rounded-lg border-2 transition-all ${
+                                            data.correct_answer.includes(
+                                                option.id,
+                                            )
+                                                ? 'border-emerald-500 bg-emerald-500 text-white'
+                                                : 'border-border bg-background text-muted-foreground hover:border-emerald-500/50'
+                                        }`}
+                                    >
+                                        <Save className="h-4 w-4" />
+                                    </button>
+                                </div>
+                            )}
+
                             <div className="w-24 shrink-0">
                                 <Label className="mb-1 block text-[10px] font-bold tracking-tighter text-muted-foreground uppercase">
                                     ID Code

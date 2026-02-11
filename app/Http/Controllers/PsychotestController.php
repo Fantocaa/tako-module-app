@@ -27,37 +27,6 @@ class PsychotestController extends Controller
             })
         ]);
     }
-    
-    public function storeApi(Request $request)
-    {
-        $client = $request->user(); // system client
-
-        $data = $request->validate([
-            'name' => 'required|string',
-            'email' => 'nullable|email',
-            'nik' => 'nullable|string|max:16',
-            'tests' => 'nullable|array',
-            'tests.*' => 'string|in:cfit,disc,papicostic,skill_test', 
-        ]);
-
-        $link = PsychotestLink::create([
-            'uuid' => Str::uuid(),
-            'applicant_name' => $data['name'],
-            'applicant_email' => $data['email'],
-            'nik' => $data['nik'] ?? null,
-            'expires_at' => now()->addHours(24),
-            'included_tests' => $data['tests'] ?? null, // Store selected tests or null for all
-        ]);
-
-        return response()->json([
-            'name' => $link->applicant_name,
-            'email' => $link->applicant_email,
-            'nik' => $link->nik,
-            // 'psychotest_url' => route('psychotest.take-test', $link->uuid),
-            'result_psikologi' => route('psychotest.take-test', $link->uuid),
-            'expires_at' => $link->expires_at,
-        ]);
-    }
 
     /**
      * Store a newly created psychotest link (Simulating internal/external API request).
@@ -349,9 +318,100 @@ class PsychotestController extends Controller
 
         return Inertia::render('psychotest/Report', [
             'link' => array_merge($link->toArray(), [
-                'duration' => $link->duration
+                'duration' => $link->duration,
+                'included_tests_expanded' => $link->included_tests // Helper for frontend
             ])
         ]);
+    }
+
+    public function storeApi(Request $request)
+    {
+        $client = $request->user(); // system client
+
+        $data = $request->validate([
+            'name' => 'required|string',
+            'email' => 'nullable|email',
+            'nik' => 'nullable|string|max:16',
+            'tests' => 'nullable|array',
+            'tests.*' => 'string|in:cfit,disc,papicostic,skill_test', 
+        ]);
+
+        $link = PsychotestLink::create([
+            'uuid' => Str::uuid(),
+            'applicant_name' => $data['name'],
+            'applicant_email' => $data['email'],
+            'nik' => $data['nik'] ?? null,
+            'expires_at' => now()->addHours(24),
+            'included_tests' => $data['tests'] ?? null, // Store selected tests or null for all
+        ]);
+
+        return response()->json([
+            'name' => $link->applicant_name,
+            'email' => $link->applicant_email,
+            'nik' => $link->nik,
+            'result_psikologi' => route('psychotest.take-test', $link->uuid),
+            'report_url' => route('psychotest.report.api', $link->uuid),
+            'expires_at' => $link->expires_at,
+        ]);
+    }
+
+    /**
+     * API for ATS to fetch report data.
+     */
+    public function reportApi($uuid)
+    {
+        $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
+
+        return response()->json($this->formatReportData($link));
+    }
+
+    /**
+     * Search for a report by NIK or Email.
+     */
+    public function searchApi(Request $request)
+    {
+        $data = $request->validate([
+            'nik' => 'nullable|string',
+            'email' => 'nullable|email',
+        ]);
+
+        if (empty($data['nik']) && empty($data['email'])) {
+            return response()->json(['message' => 'Please provide NIK or Email.'], 422);
+        }
+
+        $query = PsychotestLink::query();
+
+        if (!empty($data['nik'])) {
+            $query->where('nik', $data['nik']);
+        }
+
+        if (!empty($data['email'])) {
+            $query->where('applicant_email', $data['email']);
+        }
+
+        $link = $query->latest()->first();
+
+        if (!$link) {
+            return response()->json(['message' => 'Report not found.'], 404);
+        }
+
+        return response()->json($this->formatReportData($link));
+    }
+
+    /**
+     * Helper to format report data for API response.
+     */
+    private function formatReportData(PsychotestLink $link)
+    {
+        return [
+            'uuid' => $link->uuid,
+            'applicant_name' => $link->applicant_name,
+            'applicant_email' => $link->applicant_email,
+            'nik' => $link->nik,
+            'finished_at' => $link->finished_at,
+            'results' => $link->results,
+            'pdf_url' => route('psychotest.pdf', $link->uuid)
+        ];
     }
 
     /**
