@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Carbon\Carbon;
-
 use Barryvdh\DomPDF\Facade\Pdf;
 
 class PsychotestController extends Controller

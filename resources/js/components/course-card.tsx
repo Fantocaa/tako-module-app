@@ -1,6 +1,6 @@
+import { Badge } from '@/components/ui/badge';
 import type { Course } from '@/types';
 import { Link } from '@inertiajs/react';
-import { Clock, PlayCircle } from 'lucide-react';
 import {
     Card,
     CardContent,
@@ -16,47 +16,43 @@ interface CourseCardProps {
 
 export function CourseCard({ course }: CourseCardProps) {
     const formatDuration = (seconds: number | undefined) => {
-        if (!seconds) return '0m';
+        if (!seconds) return '0 menit';
         const minutes = Math.floor(seconds / 60);
-        const hours = Math.floor(minutes / 60);
-        const mins = minutes % 60;
-        return hours > 0 ? `${hours}h ${mins}m` : `${mins}m`;
+        return `${minutes} menit`;
     };
 
     return (
         <Link href={`/courses/${course.slug}`}>
-            <Card className="group flex h-full flex-col overflow-hidden border-border/40 bg-card/50 backdrop-blur transition-all hover:border-border hover:bg-card/80 hover:shadow-lg">
-                <CardHeader className="space-y-2">
-                    <CardTitle className="line-clamp-2 text-lg group-hover:text-primary">
+            <Card className="group flex h-full flex-col overflow-hidden border-none bg-[#1a1a1a] py-0 transition-all hover:bg-[#222222]">
+                <CardHeader className="relative space-y-2 py-6 pl-8">
+                    <CardTitle className="line-clamp-2 text-lg font-bold text-white group-hover:text-primary">
                         {course.title}
                     </CardTitle>
-                    <CardDescription className="line-clamp-2">
+                    <CardDescription className="line-clamp-2 text-sm text-white/50">
                         {course.description}
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="mt-auto flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                        <PlayCircle className="h-4 w-4" />
-                        <span>{course.lesson_count || 0} pelajaran</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <Clock className="h-4 w-4" />
+                <CardContent className="mt-auto px-8 text-xs font-medium text-white/40">
+                    <div className="flex items-center gap-4">
                         <span>{formatDuration(course.total_duration)}</span>
+                        <span>{course.lesson_count || 0} episode</span>
                     </div>
                 </CardContent>
-                <CardFooter>
-                    <div className="flex flex-wrap gap-1.5">
+                <CardFooter className="px-8 pb-6">
+                    <div className="flex flex-wrap gap-2">
                         {course.tags?.map((tag) => (
-                            <span
+                            <Badge
                                 key={tag.id}
-                                className="rounded-xl px-2 py-0.5 text-xs font-medium"
+                                className="text-[10px] font-bold tracking-wider"
                                 style={{
-                                    color: tag.color || '#000000',
-                                    backgroundColor: `color-mix(in srgb, ${tag.color || '#000000'}, transparent 80%)`,
+                                    color: tag.color || '#ffffff',
+                                    backgroundColor: tag.color
+                                        ? `color-mix(in srgb, ${tag.color}, transparent 80%)`
+                                        : 'rgba(255,255,255,0.1)',
                                 }}
                             >
                                 {tag.name}
-                            </span>
+                            </Badge>
                         ))}
                     </div>
                 </CardFooter>

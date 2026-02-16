@@ -1,5 +1,4 @@
 import AppNavbar from '@/components/app-navbar';
-import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import {
     MediaPlayer,
@@ -12,10 +11,11 @@ import {
     MediaPlayerVideo,
     MediaPlayerVolume,
 } from '@/components/ui/media-player';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import type { Course, Lesson } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, Clock, Edit } from 'lucide-react';
+import { ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface LessonShowProps {
     course: Course;
@@ -50,196 +50,47 @@ export default function LessonShow({
     const isOwner = auth?.user?.id === course.instructor?.id;
 
     return (
-        <>
+        <div className="min-h-screen bg-gradient-to-b from-[#202020] to-black text-white">
             <Head title={lesson.title} />
             <Container className="py-6 sm:py-12">
                 <AppNavbar />
             </Container>
             <Container>
-                <div className="flex h-screen flex-col gap-4 lg:flex-row">
-                    {/* Main Content */}
-                    <div className="flex flex-1 flex-col overflow-hidden rounded-2xl">
-                        {/* Content Area - Video or Article */}
-                        {/* Content Area - Video or Article */}
-                        {lesson.content_type === 'video' ? (
-                            lesson.video_path ? (
-                                <MediaPlayer
-                                    className="aspect-video w-full"
-                                    autoHide
-                                    label={lesson.title}
-                                >
-                                    <MediaPlayerVideo
-                                        src={`/storage/${lesson.video_path}`}
-                                    />
-                                    <MediaPlayerControlsOverlay />
-                                    <MediaPlayerControls>
-                                        <MediaPlayerPlay />
-                                        <MediaPlayerSeek />
-                                        <MediaPlayerTime />
-                                        <MediaPlayerVolume />
-                                        <MediaPlayerFullscreen />
-                                    </MediaPlayerControls>
-                                </MediaPlayer>
-                            ) : lesson.video_url &&
-                              getYouTubeId(lesson.video_url) ? (
-                                <div className="aspect-video w-full overflow-hidden rounded-xl bg-black shadow-lg">
-                                    <iframe
-                                        className="h-full w-full"
-                                        src={`https://www.youtube.com/embed/${getYouTubeId(
-                                            lesson.video_url,
-                                        )}`}
-                                        title={lesson.title}
-                                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                        allowFullScreen
-                                    ></iframe>
-                                </div>
-                            ) : null
-                        ) : (
-                            <div></div>
-                        )}
-
-                        {/* Lesson Info */}
-                        <div className="flex-1 overflow-auto">
-                            <div className="mx-auto max-w-4xl space-y-6 pt-6">
-                                {/* Lesson Title */}
-                                <div className="space-y-3">
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-4">
-                                            <h1 className="text-3xl font-bold">
-                                                {lesson.title}
-                                            </h1>
-                                            {isOwner && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() =>
-                                                        router.visit(
-                                                            `/courses/${course.slug}/lessons/${lesson.id}/edit`,
-                                                        )
-                                                    }
-                                                >
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                        <div className="flex gap-2">
-                                            {prevLesson && (
-                                                <Button
-                                                    variant="outline"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        router.visit(
-                                                            `/courses/${course.slug}/lessons/${prevLesson.id}`,
-                                                        )
-                                                    }
-                                                >
-                                                    <ChevronLeft className="h-4 w-4" />
-                                                    Previous
-                                                </Button>
-                                            )}
-                                            {nextLesson && (
-                                                <Button
-                                                    variant="default"
-                                                    size="sm"
-                                                    onClick={() =>
-                                                        router.visit(
-                                                            `/courses/${course.slug}/lessons/${nextLesson.id}`,
-                                                        )
-                                                    }
-                                                >
-                                                    Next
-                                                    <ChevronRight className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {lesson.content_type === 'video' && (
-                                        <p className="text-muted-foreground">
-                                            {lesson.content ||
-                                                'Tonton video untuk mempelajari materi ini'}
-                                        </p>
-                                    )}
-                                </div>
-
-                                {/* Article Content */}
-                                {lesson.content_type === 'article' &&
-                                    lesson.content && (
-                                        <div className="prose prose-neutral dark:prose-invert max-w-none pb-12">
-                                            <div
-                                                dangerouslySetInnerHTML={{
-                                                    __html: lesson.content
-                                                        .split('\n')
-                                                        .map((line) => {
-                                                            // Simple markdown parsing
-                                                            if (
-                                                                line.startsWith(
-                                                                    '# ',
-                                                                )
-                                                            )
-                                                                return `<h1>${line.slice(2)}</h1>`;
-                                                            if (
-                                                                line.startsWith(
-                                                                    '## ',
-                                                                )
-                                                            )
-                                                                return `<h2>${line.slice(3)}</h2>`;
-                                                            if (
-                                                                line.startsWith(
-                                                                    '### ',
-                                                                )
-                                                            )
-                                                                return `<h3>${line.slice(4)}</h3>`;
-                                                            if (
-                                                                line.startsWith(
-                                                                    '```',
-                                                                ) &&
-                                                                line.endsWith(
-                                                                    '```',
-                                                                )
-                                                            )
-                                                                return '';
-                                                            if (
-                                                                line.startsWith(
-                                                                    '```',
-                                                                )
-                                                            )
-                                                                return '<pre><code>';
-                                                            if (line === '```')
-                                                                return '</code></pre>';
-                                                            if (
-                                                                line.trim() ===
-                                                                ''
-                                                            )
-                                                                return '<br />';
-                                                            return `<p>${line}</p>`;
-                                                        })
-                                                        .join(''),
-                                                }}
-                                            />
-                                        </div>
-                                    )}
-                            </div>
-                        </div>
+                <div className="mx-auto px-4 py-8">
+                    {/* Breadcrumbs */}
+                    <div className="mb-8 flex items-center gap-2 text-sm font-medium text-white/40">
+                        <Link href="/courses" className="hover:text-white">
+                            Series
+                        </Link>
+                        <ChevronRight className="h-4 w-4" />
+                        <Link
+                            href={`/courses/${course.slug}`}
+                            className="hover:text-white"
+                        >
+                            {course.title}
+                        </Link>
+                        <ChevronRight className="h-4 w-4" />
+                        <span className="text-white/60">
+                            {lessons.findIndex((l) => l.id === lesson.id) + 1}
+                        </span>
                     </div>
 
-                    {/* Sidebar - Lessons List */}
-                    <div className="h-fit w-full rounded-2xl border lg:w-80 xl:w-96">
-                        <div className="flex h-fit flex-col">
-                            {/* Course Header */}
-                            <div className="space-y-3 border-b p-4">
-                                <Link href={`/courses/${course.slug}`}>
-                                    <h2 className="font-semibold hover:text-primary">
-                                        {course.title}
-                                    </h2>
-                                </Link>
-                                <p className="text-sm text-muted-foreground">
-                                    {lessons.length} episodes
-                                </p>
-                            </div>
+                    <div className="flex flex-col gap-8 lg:flex-row">
+                        {/* Sidebar - Lessons List */}
+                        <div className="w-full shrink-0 lg:w-[350px]">
+                            <div className="overflow-hidden rounded-2xl border border-white/5 bg-[#121212]">
+                                <div className="border-b border-white/5 p-6">
+                                    <Link href={`/courses/${course.slug}`}>
+                                        <h2 className="mb-2 text-lg leading-tight font-bold text-white transition-colors hover:text-white/80">
+                                            {course.title}
+                                        </h2>
+                                    </Link>
+                                    <p className="text-sm font-medium text-white/30">
+                                        {lessons.length} videos
+                                    </p>
+                                </div>
 
-                            {/* Lessons List */}
-                            <ScrollArea className="flex-1">
-                                <div className="space-y-1 p-2">
+                                <div className="p-2">
                                     {lessons.map((l, index) => (
                                         <button
                                             key={l.id}
@@ -248,42 +99,125 @@ export default function LessonShow({
                                                     `/courses/${course.slug}/lessons/${l.id}`,
                                                 )
                                             }
-                                            className={`group flex w-full items-start gap-3 rounded-lg p-3 text-left transition-colors ${
+                                            className={`group flex w-full items-center gap-4 rounded-xl p-4 text-left transition-all ${
                                                 l.id === lesson.id
-                                                    ? 'bg-primary/10 text-primary'
-                                                    : 'hover:bg-muted'
+                                                    ? 'bg-white/5 text-white'
+                                                    : 'text-white/40 hover:bg-white/[0.02] hover:text-white/70'
                                             }`}
                                         >
                                             <div
-                                                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded text-xs font-medium ${
+                                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
                                                     l.id === lesson.id
-                                                        ? 'bg-primary text-primary-foreground'
-                                                        : 'bg-muted text-muted-foreground group-hover:bg-primary/20'
+                                                        ? 'bg-white text-black'
+                                                        : 'bg-white/5 text-white/30 group-hover:bg-white/10 group-hover:text-white/50'
                                                 }`}
                                             >
                                                 {index + 1}
                                             </div>
-                                            <div className="flex-1 space-y-1">
-                                                <h3 className="text-sm leading-tight font-medium">
+                                            <div className="min-w-0 flex-1">
+                                                <h3 className="truncate text-sm leading-tight font-semibold">
                                                     {l.title}
                                                 </h3>
-                                                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                                                    <Clock className="h-3 w-3" />
+                                                <div className="mt-1 flex items-center gap-2 text-[10px] font-bold tracking-wider uppercase">
                                                     <span>
                                                         {formatDuration(
                                                             l.duration,
                                                         )}
                                                     </span>
+                                                    <svg
+                                                        className="h-3 w-3 fill-current"
+                                                        viewBox="0 0 24 24"
+                                                    >
+                                                        <path d="M18 10h-1.58A7 7 0 1 0 10 16.42V18h4v-1.58A7 7 0 0 0 18 10zM10 4a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
+                                                    </svg>
                                                 </div>
                                             </div>
+                                            {l.id === lesson.id && (
+                                                <PlayCircle className="h-5 w-5 fill-current text-white/20" />
+                                            )}
                                         </button>
                                     ))}
                                 </div>
-                            </ScrollArea>
+                            </div>
+                        </div>
+
+                        {/* Main Content */}
+                        <div className="min-w-0 flex-1">
+                            {/* Video Area */}
+                            {lesson.content_type === 'video' && (
+                                <div className="overflow-hidden rounded-2xl border border-white/5 bg-black shadow-2xl">
+                                    {lesson.video_path ? (
+                                        <MediaPlayer
+                                            className="aspect-video w-full"
+                                            autoHide
+                                            label={lesson.title}
+                                        >
+                                            <MediaPlayerVideo
+                                                src={`/storage/${lesson.video_path}`}
+                                            />
+                                            <MediaPlayerControlsOverlay />
+                                            <MediaPlayerControls>
+                                                <MediaPlayerPlay />
+                                                <MediaPlayerSeek />
+                                                <MediaPlayerTime />
+                                                <MediaPlayerVolume />
+                                                <MediaPlayerFullscreen />
+                                            </MediaPlayerControls>
+                                        </MediaPlayer>
+                                    ) : lesson.video_url &&
+                                      getYouTubeId(lesson.video_url) ? (
+                                        <div className="aspect-video w-full">
+                                            <iframe
+                                                className="h-full w-full"
+                                                src={`https://www.youtube.com/embed/${getYouTubeId(
+                                                    lesson.video_url,
+                                                )}`}
+                                                title={lesson.title}
+                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                                allowFullScreen
+                                            ></iframe>
+                                        </div>
+                                    ) : null}
+                                </div>
+                            )}
+
+                            {/* Lesson Info */}
+                            <div className="mt-10">
+                                <div className="flex items-start justify-between gap-4">
+                                    <div className="min-w-0 flex-1 space-y-4">
+                                        <h1 className="text-3xl font-bold tracking-tight text-white">
+                                            {lesson.title}
+                                        </h1>
+
+                                        <div className="prose prose-lg max-w-none text-white/80 prose-invert">
+                                            {lesson.content ? (
+                                                <ReactMarkdown
+                                                    remarkPlugins={[remarkGfm]}
+                                                >
+                                                    {lesson.content}
+                                                </ReactMarkdown>
+                                            ) : (
+                                                <p className="text-white/50">
+                                                    Mari kita mulai belajar
+                                                    materi ini.
+                                                </p>
+                                            )}
+                                        </div>
+                                    </div>
+                                    <div className="flex shrink-0 items-center gap-2">
+                                        <button className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/5 bg-white/5 text-white/40 transition-all hover:bg-white/10 hover:text-white">
+                                            <ChevronLeft className="h-5 w-5" />
+                                        </button>
+                                        <button className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/5 bg-white/5 text-white/40 transition-all hover:bg-white/10 hover:text-white">
+                                            <ChevronRight className="h-5 w-5" />
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
             </Container>
-        </>
+        </div>
     );
 }

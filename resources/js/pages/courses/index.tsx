@@ -1,12 +1,8 @@
 import AppNavbar from '@/components/app-navbar';
 import { CourseCard } from '@/components/course-card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
-import { Input } from '@/components/ui/input';
 import type { Course, Tag } from '@/types';
 import { Head, router, usePage } from '@inertiajs/react';
-import { Plus, Search } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 interface CoursesIndexProps {
@@ -54,83 +50,52 @@ export default function CoursesIndex({
     }, [selectedTag, searchQuery]);
 
     return (
-        <>
+        <div className="min-h-screen bg-gradient-to-b from-[#202020] to-black text-white">
             <Head title="Series" />
             <Container className="py-6 sm:py-12">
                 <AppNavbar />
             </Container>
-
-            <Container className="space-y-8 pb-16">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4">
+            <div className="border-b border-white/5 py-12">
+                <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="space-y-4">
-                        <h1 className="text-4xl font-bold tracking-tight">
+                        <h1 className="text-3xl font-bold tracking-tight">
                             Series
                         </h1>
-                        <p className="max-w-2xl text-lg text-muted-foreground">
+                        <p className="max-w-2xl text-base leading-relaxed text-white/50">
                             Pelajari topik-topik penting dalam pengembangan
                             aplikasi web dan jadilah developer handal di era
                             teknologi modern.
                         </p>
                     </div>
-                    {auth?.user && (
-                        <Button
-                            variant="default"
-                            className="gap-2"
-                            onClick={() => router.visit('/courses/create')}
+
+                    {/* Filter Tags */}
+                    <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm font-medium">
+                        <button
+                            className={`transition-colors ${selectedTag === null ? 'text-white' : 'text-white/40 hover:text-white/60'}`}
+                            onClick={() => setSelectedTag(null)}
                         >
-                            <Plus className="h-4 w-4" />
-                            Create Course
-                        </Button>
-                    )}
+                            Semua
+                        </button>
+                        {tags.map((tag) => (
+                            <button
+                                key={tag.id}
+                                className={`transition-colors ${
+                                    selectedTag === tag.slug
+                                        ? 'text-white'
+                                        : 'text-white/40 hover:text-white/60'
+                                }`}
+                                onClick={() => setSelectedTag(tag.slug)}
+                            >
+                                {tag.name}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+            </div>
 
-                {/* Filter Tags */}
-                <div className="flex flex-wrap gap-2">
-                    <Badge
-                        variant={selectedTag === null ? 'default' : 'outline'}
-                        className="cursor-pointer px-4 py-1.5 text-sm transition-colors"
-                        onClick={() => setSelectedTag(null)}
-                    >
-                        Semua
-                    </Badge>
-                    {tags.map((tag) => (
-                        <span
-                            key={tag.id}
-                            className={`cursor-pointer rounded-full px-4 py-1.5 text-sm font-medium transition-all hover:opacity-80 ${
-                                selectedTag === tag.slug
-                                    ? 'ring-2 ring-offset-1'
-                                    : ''
-                            }`}
-                            style={{
-                                borderColor: tag.color || '#000000',
-                                color: tag.color || '#000000',
-                                backgroundColor: `color-mix(in srgb, ${tag.color || '#000000'}, transparent 80%)`,
-                                // @ts-ignore
-                                '--tw-ring-color':
-                                    tag.color + '80' || '#000000',
-                            }}
-                            onClick={() => setSelectedTag(tag.slug)}
-                        >
-                            {tag.name}
-                        </span>
-                    ))}
-                </div>
-
-                {/* Search */}
-                <div className="relative max-w-md">
-                    <Search className="absolute top-1/2 left-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                        type="search"
-                        placeholder="Cari course..."
-                        className="pl-10"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-
+            <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
                 {/* Courses Grid */}
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                     {courses.data.map((course) => (
                         <CourseCard key={course.id} course={course} />
                     ))}
@@ -138,7 +103,7 @@ export default function CoursesIndex({
 
                 {courses.data.length === 0 && (
                     <div className="py-12 text-center">
-                        <p className="text-muted-foreground">
+                        <p className="text-white/40">
                             Tidak ada course yang ditemukan.
                         </p>
                     </div>
@@ -146,7 +111,7 @@ export default function CoursesIndex({
 
                 {/* Pagination */}
                 {courses.links && courses.links.length > 3 && (
-                    <div className="flex justify-center gap-2">
+                    <div className="mt-12 flex justify-center gap-2">
                         {courses.links.map((link: any, index: number) => (
                             <button
                                 key={index}
@@ -161,17 +126,17 @@ export default function CoursesIndex({
                                 disabled={!link.url}
                                 className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
                                     link.active
-                                        ? 'bg-primary text-primary-foreground'
+                                        ? 'bg-white text-black'
                                         : link.url
-                                          ? 'bg-muted hover:bg-muted/80'
-                                          : 'cursor-not-allowed bg-muted/50 text-muted-foreground'
+                                          ? 'bg-white/5 hover:bg-white/10'
+                                          : 'cursor-not-allowed opacity-30'
                                 }`}
                                 dangerouslySetInnerHTML={{ __html: link.label }}
                             />
                         ))}
                     </div>
                 )}
-            </Container>
-        </>
+            </div>
+        </div>
     );
 }

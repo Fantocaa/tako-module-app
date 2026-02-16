@@ -33,6 +33,11 @@ class DatabaseSeeder extends Seeder
             'name' => 'Admin',
             'email' => 'admin@admin.com',
             'password' => Hash::make('admin123'),
+       
+            // Pastikan 2FA kosong
+            'two_factor_secret' => null,
+            'two_factor_recovery_codes' => null,
+            'two_factor_confirmed_at' => null,
         ]);
 
         $user->assignRole('admin');

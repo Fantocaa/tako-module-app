@@ -18,19 +18,21 @@ use Inertia\Inertia;
 // use Laravel\Fortify\Features;
 
 Route::get('/', function () {
-    // return Inertia::render('welcome', [
-    //     'canRegister' => Features::enabled(Features::registration()),
-    // ]);
+    if (auth()->check()) {
+        return auth()->user()->hasRole('user') 
+            ? redirect()->route('courses.index') 
+            : redirect()->route('dashboard');
+    }
     return redirect()->route('login');
 })->name('home');
 
 Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::get('dashboard', function () {
+        if (auth()->user()->hasRole('user')) {
+             return redirect()->route('courses.index');
+        }
         return Inertia::render('dashboard');
     })->name('dashboard');
-    
-    // Redirect authenticated users to courses by default
-    Route::redirect('/', '/courses');
     
     Route::resource('transactions', TransactionController::class);
     Route::resource('roles', RoleController::class);
@@ -45,13 +47,6 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::post('/backup/run', [BackupController::class, 'run'])->name('backup.run');
     Route::get('/backup/download/{file}', [BackupController::class, 'download'])->name('backup.download');
     Route::delete('/backup/delete/{file}', [BackupController::class, 'delete'])->name('backup.delete');
-    Route::resource('tags', TagController::class);
-
-    // LMS Routes
-    Route::get('/lms', [CourseController::class, 'indexCrud'])->name('lms.index');
-    Route::post('/courses/{course}/lessons/reorder', [LessonController::class, 'reorder'])->name('courses.lessons.reorder');
-    Route::resource('courses', CourseController::class);
-    Route::resource('courses.lessons', LessonController::class);
 
     // Psychotest Admin/Testing Routes
     Route::get('/psychotest-link', [PsychotestController::class, 'index'])->name('psychotest.index');
@@ -71,4 +66,4 @@ Route::get('/psychotest/{uuid}', [PsychotestController::class, 'testPage'])->nam
 Route::post('/psychotest/{uuid}/submit', [PsychotestController::class, 'submit'])->name('psychotest.submit');
 
 require __DIR__ . '/settings.php';
-
+require __DIR__ . '/lms.php';
