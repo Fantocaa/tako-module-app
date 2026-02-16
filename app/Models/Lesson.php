@@ -39,6 +39,22 @@ class Lesson extends Model
     }
 
     /**
+     * Get the progress records for the lesson.
+     */
+    public function progress(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LessonProgress::class);
+    }
+
+    /**
+     * Get the progress for the current authenticated user.
+     */
+    public function currentUserProgress(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(LessonProgress::class)->where('user_id', auth()->id());
+    }
+
+    /**
      * Scope a query to order lessons by order field.
      */
     public function scopeOrdered(Builder $query): Builder

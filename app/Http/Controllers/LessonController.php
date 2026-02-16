@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\Course;
 use App\Models\Lesson;
 use App\Http\Requests\StoreLessonRequest;
+use App\Http\Requests\UpdateLessonProgressRequest;
 use App\Http\Requests\UpdateLessonRequest;
+use App\Models\LessonProgress;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -18,7 +20,9 @@ class LessonController extends Controller
      */
     public function index(Course $course): Response
     {
-        $lessons = $course->lessons()->ordered()->get();
+        $lessons = Cache::tags(['courses'])->remember("course_lessons_all:{$course->id}", now()->addHours(24), function () use ($course) {
+            return $course->lessons()->ordered()->get();
+        });
 
         return Inertia::render('courses/[slug]/lessons/index', [
             'course' => $course,
@@ -70,26 +74,34 @@ class LessonController extends Controller
      */
     public function show(Course $course, Lesson $lesson): Response
     {
-        $data = Cache::tags(['courses'])->remember("course:slug:{$course->slug}:lesson:id:{$lesson->id}", 3600, function() use ($course, $lesson) {
-            $course->load(['lessons' => function ($query) {
-                $query->where('is_published', true)->orderBy('order');
-            }, 'tags', 'instructor']);
-            
-            $lessons = $course->lessons;
-            $currentIndex = $lessons->search(fn($l) => $l->id === $lesson->id);
-            
-            $prevLesson = $currentIndex > 0 ? $lessons[$currentIndex - 1] : null;
-            $nextLesson = $currentIndex < $lessons->count() - 1 ? $lessons[$currentIndex + 1] : null;
-
-            return compact('course', 'lesson', 'lessons', 'prevLesson', 'nextLesson');
+        $lessons = Cache::tags(['courses'])->remember("course_lessons_published:{$course->id}", now()->addHours(24), function () use ($course) {
+            return $course->lessons()->where('is_published', true)->orderBy('order')->get();
         });
 
+        $currentIndex = $lessons->search(fn($l) => $l->id === $lesson->id);
+        
+        $prevLesson = $currentIndex > 0 ? $lessons[$currentIndex - 1] : null;
+        $nextLesson = $currentIndex < $lessons->count() - 1 ? $lessons[$currentIndex + 1] : null;
+
+        // Fetch user progress for all lessons in this course
+        $userProgress = \App\Models\LessonProgress::where('user_id', auth()->id())
+            ->whereIn('lesson_id', $lessons->pluck('id'))
+            ->get()
+            ->keyBy('lesson_id');
+
         return Inertia::render('courses/[slug]/lessons/[id]', [
-            'course' => $data['course'],
-            'lesson' => $data['lesson'],
-            'lessons' => $data['lessons'],
-            'prevLesson' => $data['prevLesson'],
-            'nextLesson' => $data['nextLesson'],
+            'course' => $course,
+            'lesson' => $lesson,
+            'lessons' => $lessons->map(function ($l) use ($userProgress) {
+                $progress = $userProgress->get($l->id);
+                return array_merge($l->toArray(), [
+                    'completed_at' => $progress?->completed_at,
+                    'last_position' => $progress?->last_position,
+                ]);
+            }),
+            'currentLessonProgress' => $userProgress->get($lesson->id),
+            'prevLesson' => $prevLesson,
+            'nextLesson' => $nextLesson,
         ]);
     }
 
@@ -170,5 +182,23 @@ class LessonController extends Controller
         $course->clearInstanceCache();
 
         return redirect()->back()->with('success', 'Lesson order updated successfully.');
+    }
+
+    public function updateProgress(UpdateLessonProgressRequest $request,Lesson $lesson)
+    {
+        $user = auth()->user();
+
+        $progress = LessonProgress::updateOrCreate(
+            ['user_id' => $user->id, 'lesson_id' => $lesson->id],
+            [
+                'last_position' => $request->last_position,
+                'completed_at' => $request->is_completed ? now() : null,
+            ]
+        );
+
+        return response()->json([
+            'success' => true,
+            'progress' => $progress,
+        ]);
     }
 }

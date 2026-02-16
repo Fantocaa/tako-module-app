@@ -60,4 +60,12 @@ class User extends Authenticatable
     {
         return $this->belongsTo(Position::class);
     }
+
+    /**
+     * Get the lesson progress for the user.
+     */
+    public function lessonProgress(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LessonProgress::class);
+    }
 }

@@ -11,7 +11,7 @@ class UpdateLessonProgressRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        return false;
+        return auth()->check();
     }
 
     /**
@@ -22,7 +22,8 @@ class UpdateLessonProgressRequest extends FormRequest
     public function rules(): array
     {
         return [
-            //
+            'last_position' => 'nullable|integer',
+            'is_completed' => 'nullable|boolean',
         ];
     }
 }

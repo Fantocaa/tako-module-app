@@ -1,28 +1,41 @@
 import AppNavbar from '@/components/app-navbar';
 import { Container } from '@/components/ui/container';
-import {
-    MediaPlayer,
-    MediaPlayerControls,
-    MediaPlayerControlsOverlay,
-    MediaPlayerFullscreen,
-    MediaPlayerPlay,
-    MediaPlayerSeek,
-    MediaPlayerTime,
-    MediaPlayerVideo,
-    MediaPlayerVolume,
-} from '@/components/ui/media-player';
 import type { Course, Lesson } from '@/types';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { ChevronLeft, ChevronRight, PlayCircle } from 'lucide-react';
+import {
+    MediaPlayer,
+    MediaProvider,
+    type MediaPlayerInstance,
+} from '@vidstack/react';
+import {
+    DefaultVideoLayout,
+    defaultLayoutIcons,
+} from '@vidstack/react/player/layouts/default';
+import '@vidstack/react/player/styles/default/layouts/video.css';
+import '@vidstack/react/player/styles/default/theme.css';
+import {
+    CheckCircle2,
+    ChevronLeft,
+    ChevronRight,
+    PlayCircle,
+} from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 interface LessonShowProps {
     course: Course;
     lesson: Lesson;
-    lessons: Lesson[];
+    lessons: (Lesson & {
+        completed_at: string | null;
+        last_position: number | null;
+    })[];
     prevLesson: Lesson | null;
     nextLesson: Lesson | null;
+    currentLessonProgress: {
+        last_position: number | null;
+        completed_at: string | null;
+    } | null;
 }
 
 function formatDuration(seconds: number | null) {
@@ -32,22 +45,105 @@ function formatDuration(seconds: number | null) {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function getYouTubeId(url: string) {
-    const regExp =
-        /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/;
-    const match = url.match(regExp);
-    return match && match[2].length === 11 ? match[2] : null;
-}
-
 export default function LessonShow({
     course,
     lesson,
     lessons,
     prevLesson,
     nextLesson,
+    currentLessonProgress,
 }: LessonShowProps) {
     const { auth } = usePage().props as any;
     const isOwner = auth?.user?.id === course.instructor?.id;
+    const player = useRef<MediaPlayerInstance>(null);
+    const lastSavedTime = useRef(0);
+    const [hasResumed, setHasResumed] = useState(false);
+
+    // Fullscreen shortcut 'f'
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (
+                event.key.toLowerCase() === 'f' &&
+                !['input', 'textarea'].includes(
+                    (event.target as HTMLElement).tagName.toLowerCase(),
+                )
+            ) {
+                event.preventDefault();
+                if (player.current?.state.fullscreen) {
+                    player.current.exitFullscreen();
+                } else {
+                    player.current?.enterFullscreen();
+                }
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, []);
+
+    // Resume logic
+    useEffect(() => {
+        if (
+            player.current &&
+            currentLessonProgress?.last_position &&
+            !hasResumed
+        ) {
+            player.current.currentTime = currentLessonProgress.last_position;
+            setHasResumed(true);
+        }
+    }, [currentLessonProgress, hasResumed]);
+
+    const saveProgress = (time: number, isCompleted: boolean = false) => {
+        // Only save if it's a significant jump (e.g. 5 seconds) or if completed
+        if (!isCompleted && Math.abs(time - lastSavedTime.current) < 5) return;
+
+        lastSavedTime.current = time;
+
+        if (isCompleted) {
+            router.post(
+                `/lessons/${lesson.id}/progress`,
+                {
+                    last_position: Math.floor(time),
+                    is_completed: isCompleted,
+                },
+                {
+                    preserveState: true,
+                    preserveScroll: true,
+                },
+            );
+        } else {
+            // Use fetch for silent periodic updates (no loading bar)
+            fetch(`/lessons/${lesson.id}/progress`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    Accept: 'application/json',
+                    'X-CSRF-TOKEN':
+                        (
+                            document.querySelector(
+                                'meta[name="csrf-token"]',
+                            ) as HTMLMetaElement
+                        )?.content || '',
+                },
+                body: JSON.stringify({
+                    last_position: Math.floor(time),
+                    is_completed: isCompleted,
+                }),
+            }).catch((err) => console.error('Silent save failed:', err));
+        }
+    };
+
+    const onTimeUpdate = (event: any) => {
+        saveProgress(event.currentTime);
+    };
+
+    const onEnded = () => {
+        saveProgress(player.current?.currentTime || 0, true);
+    };
+
+    const videoSrc = lesson.video_path
+        ? `/storage/${lesson.video_path}`
+        : lesson.video_url || '';
 
     return (
         <div className="min-h-screen bg-gradient-to-b from-[#202020] to-black text-white">
@@ -112,24 +208,36 @@ export default function LessonShow({
                                                         : 'bg-white/5 text-white/30 group-hover:bg-white/10 group-hover:text-white/50'
                                                 }`}
                                             >
-                                                {index + 1}
+                                                {l.completed_at ? (
+                                                    <CheckCircle2 className="h-4 w-4" />
+                                                ) : (
+                                                    index + 1
+                                                )}
                                             </div>
                                             <div className="min-w-0 flex-1">
                                                 <h3 className="truncate text-sm leading-tight font-semibold">
                                                     {l.title}
                                                 </h3>
-                                                <div className="mt-1 flex items-center gap-2 text-[10px] font-bold tracking-wider uppercase">
-                                                    <span>
-                                                        {formatDuration(
-                                                            l.duration,
+                                                <div className="mt-1 flex items-center gap-2">
+                                                    <div className="flex items-center gap-2 text-[10px] font-bold tracking-wider uppercase">
+                                                        <span>
+                                                            {formatDuration(
+                                                                l.duration,
+                                                            )}
+                                                        </span>
+                                                    </div>
+                                                    {l.last_position !== null &&
+                                                        l.duration &&
+                                                        !l.completed_at && (
+                                                            <div className="h-1 flex-1 rounded-full bg-white/5">
+                                                                <div
+                                                                    className="h-full rounded-full bg-white/40"
+                                                                    style={{
+                                                                        width: `${Math.min(100, (l.last_position / l.duration) * 100)}%`,
+                                                                    }}
+                                                                />
+                                                            </div>
                                                         )}
-                                                    </span>
-                                                    <svg
-                                                        className="h-3 w-3 fill-current"
-                                                        viewBox="0 0 24 24"
-                                                    >
-                                                        <path d="M18 10h-1.58A7 7 0 1 0 10 16.42V18h4v-1.58A7 7 0 0 0 18 10zM10 4a5 5 0 1 1 0 10 5 5 0 0 1 0-10z" />
-                                                    </svg>
                                                 </div>
                                             </div>
                                             {l.id === lesson.id && (
@@ -144,40 +252,25 @@ export default function LessonShow({
                         {/* Main Content */}
                         <div className="min-w-0 flex-1">
                             {/* Video Area */}
-                            {lesson.content_type === 'video' && (
+                            {lesson.content_type === 'video' && videoSrc && (
                                 <div className="overflow-hidden rounded-2xl border border-white/5 bg-black shadow-2xl">
-                                    {lesson.video_path ? (
-                                        <MediaPlayer
-                                            className="aspect-video w-full"
-                                            autoHide
-                                            label={lesson.title}
-                                        >
-                                            <MediaPlayerVideo
-                                                src={`/storage/${lesson.video_path}`}
-                                            />
-                                            <MediaPlayerControlsOverlay />
-                                            <MediaPlayerControls>
-                                                <MediaPlayerPlay />
-                                                <MediaPlayerSeek />
-                                                <MediaPlayerTime />
-                                                <MediaPlayerVolume />
-                                                <MediaPlayerFullscreen />
-                                            </MediaPlayerControls>
-                                        </MediaPlayer>
-                                    ) : lesson.video_url &&
-                                      getYouTubeId(lesson.video_url) ? (
-                                        <div className="aspect-video w-full">
-                                            <iframe
-                                                className="h-full w-full"
-                                                src={`https://www.youtube.com/embed/${getYouTubeId(
-                                                    lesson.video_url,
-                                                )}`}
-                                                title={lesson.title}
-                                                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                                                allowFullScreen
-                                            ></iframe>
-                                        </div>
-                                    ) : null}
+                                    <MediaPlayer
+                                        ref={player}
+                                        title={lesson.title}
+                                        src={videoSrc}
+                                        onTimeUpdate={onTimeUpdate}
+                                        onEnded={onEnded}
+                                        onContextMenu={(e) =>
+                                            e.preventDefault()
+                                        }
+                                        className="aspect-video w-full bg-black text-white"
+                                        playsInline
+                                    >
+                                        <MediaProvider />
+                                        <DefaultVideoLayout
+                                            icons={defaultLayoutIcons}
+                                        />
+                                    </MediaPlayer>
                                 </div>
                             )}
 
@@ -205,12 +298,22 @@ export default function LessonShow({
                                         </div>
                                     </div>
                                     <div className="flex shrink-0 items-center gap-2">
-                                        <button className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/5 bg-white/5 text-white/40 transition-all hover:bg-white/10 hover:text-white">
-                                            <ChevronLeft className="h-5 w-5" />
-                                        </button>
-                                        <button className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/5 bg-white/5 text-white/40 transition-all hover:bg-white/10 hover:text-white">
-                                            <ChevronRight className="h-5 w-5" />
-                                        </button>
+                                        {prevLesson && (
+                                            <Link
+                                                href={`/courses/${course.slug}/lessons/${prevLesson.id}`}
+                                                className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/5 bg-white/5 text-white/40 transition-all hover:bg-white/10 hover:text-white"
+                                            >
+                                                <ChevronLeft className="h-5 w-5" />
+                                            </Link>
+                                        )}
+                                        {nextLesson && (
+                                            <Link
+                                                href={`/courses/${course.slug}/lessons/${nextLesson.id}`}
+                                                className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/5 bg-white/5 text-white/40 transition-all hover:bg-white/10 hover:text-white"
+                                            >
+                                                <ChevronRight className="h-5 w-5" />
+                                            </Link>
+                                        )}
                                     </div>
                                 </div>
                             </div>
