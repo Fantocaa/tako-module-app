@@ -5,6 +5,7 @@ import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 import { useForm } from '@inertiajs/react';
 import { useEffect } from 'react';
+import { toast } from 'sonner';
 
 interface CourseFormProps {
     course?: any;
@@ -52,10 +53,19 @@ export default function CourseForm({
             tags: data.selectedTags,
         }));
 
+        const options = {
+            onSuccess: () => {
+                toast.success('Course saved successfully.');
+            },
+            onError: () => {
+                toast.error('Something went wrong. Please check the form.');
+            },
+        };
+
         if (method === 'post') {
-            post(action);
+            post(action, options);
         } else {
-            put(action);
+            put(action, options);
         }
     };
 
@@ -118,20 +128,6 @@ export default function CourseForm({
                     </p>
                 )}
             </div>
-
-            {/* <div className="space-y-2">
-                <Label htmlFor="thumbnail">Thumbnail URL</Label>
-                <Input
-                    id="thumbnail"
-                    value={data.thumbnail}
-                    onChange={(e) => setData('thumbnail', e.target.value)}
-                    placeholder="https://example.com/image.jpg"
-                />
-                {errors.thumbnail && (
-                    <p className="text-sm text-destructive">{errors.thumbnail}</p>
-                )}
-            </div> */}
-
             <div className="space-y-4">
                 <Label>Tags</Label>
                 <div className="mt-1 flex flex-wrap gap-2">

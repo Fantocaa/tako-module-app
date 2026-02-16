@@ -1,69 +1,66 @@
+import { Avatar } from '@/components/ui/intent-avatar';
 import {
-  ArrowRightOnRectangleIcon,
-  Cog6ToothIcon,
-  CommandLineIcon,
-  LifebuoyIcon,
-  ShieldCheckIcon,
-  Squares2X2Icon,
-} from "@heroicons/react/24/outline"
-import { Avatar } from "@/components/ui/intent-avatar"
+    Menu,
+    MenuContent,
+    MenuHeader,
+    MenuItem,
+    MenuSeparator,
+    MenuTrigger,
+} from '@/components/ui/menu';
+import type { SharedData } from '@/types';
 import {
-  Menu,
-  MenuContent,
-  MenuHeader,
-  MenuItem,
-  MenuSection,
-  MenuSeparator,
-  MenuTrigger,
-} from "@/components/ui/menu"
+    ArrowRightOnRectangleIcon,
+    Cog6ToothIcon,
+    Squares2X2Icon,
+} from '@heroicons/react/24/outline';
+import { router, usePage } from '@inertiajs/react';
 
 export function UserMenu() {
-  return (
-    <Menu>
-      <MenuTrigger aria-label="Open Menu">
-        <Avatar
-          alt="cobain"
-          size="md"
-          isSquare
-          src="https://intentui.com/images/avatar/cobain.jpg"
-        />
-      </MenuTrigger>
-      <MenuContent placement="bottom right" className="min-w-60 sm:min-w-56">
-        <MenuSection>
-          <MenuHeader separator>
-            <span className="block">Kurt Cobain</span>
-            <span className="font-normal text-muted-fg">@cobain</span>
-          </MenuHeader>
-        </MenuSection>
+    const { auth } = usePage<SharedData>().props;
 
-        <MenuItem href="/dashboard">
-          <Squares2X2Icon />
-          Dashboard
-        </MenuItem>
-        <MenuItem href="#settings">
-          <Cog6ToothIcon />
-          Settings
-        </MenuItem>
-        {/* <MenuItem href="#security">
-          <ShieldCheckIcon />
-          Security
-        </MenuItem>
-        <MenuSeparator />
-        <MenuItem>
-          <CommandLineIcon />
-          Command Menu
-        </MenuItem> */}
-{/* 
-        <MenuItem href="#contact">
-          <LifebuoyIcon />
-          Customer Support
-        </MenuItem> */}
-        <MenuSeparator />
-        <MenuItem href="#logout">
-          <ArrowRightOnRectangleIcon />
-          Log out
-        </MenuItem>
-      </MenuContent>
-    </Menu>
-  )
+    const handleLogout = () => {
+        router.post('/logout');
+    };
+
+    return (
+        <Menu>
+            <MenuTrigger aria-label="Open Menu">
+                <Avatar
+                    alt={auth.user.name}
+                    size="md"
+                    isSquare
+                    src={
+                        auth.user.avatar ||
+                        `https://ui-avatars.com/api/?name=${encodeURIComponent(auth.user.name)}&background=random`
+                    }
+                />
+            </MenuTrigger>
+            <MenuContent
+                placement="bottom right"
+                className="min-w-60 sm:min-w-56"
+            >
+                <MenuHeader separator>
+                    <span className="block">{auth.user.name}</span>
+                    <span className="font-normal text-muted-fg">
+                        {auth.user.email}
+                    </span>
+                </MenuHeader>
+
+                <MenuItem href="/dashboard">
+                    <Squares2X2Icon />
+                    Dashboard
+                </MenuItem>
+                <MenuItem href="/profile">
+                    <Cog6ToothIcon />
+                    Settings
+                </MenuItem>
+
+                <MenuSeparator />
+                <MenuItem onAction={handleLogout}>
+                    <ArrowRightOnRectangleIcon />
+                    Log out
+                </MenuItem>
+            </MenuContent>
+        </Menu>
+    );
 }

@@ -13,6 +13,7 @@ use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TagController;
 use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\UserProfileController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 // use Laravel\Fortify\Features;
@@ -33,6 +34,11 @@ Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
         }
         return Inertia::render('dashboard');
     })->name('dashboard');
+
+    Route::get('/profile', [UserProfileController::class, 'edit'])->name('user.profile.edit');
+    Route::patch('/profile', [UserProfileController::class, 'update'])->name('user.profile.update');
+    Route::put('/profile/password', [UserProfileController::class, 'updatePassword'])->name('user.profile.password.update');
+    Route::delete('/profile', [UserProfileController::class, 'destroy'])->name('user.profile.destroy');
     
     Route::resource('transactions', TransactionController::class);
     Route::resource('roles', RoleController::class);

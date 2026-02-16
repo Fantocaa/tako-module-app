@@ -70,14 +70,12 @@ class PsychotestQuestionController extends Controller
         //
     }
 
-    /*
-    public function edit(PsychotestQuestion $psychotestQuestion)
-    {
-       return Inertia::render('psychotest/questions/edit', [
-            'question' => $psychotestQuestion
-       ]);
-    }
-    */
+    // public function edit(PsychotestQuestion $psychotestQuestion)
+    // {
+    //    return Inertia::render('psychotest/questions/edit', [
+    //         'question' => $psychotestQuestion
+    //    ]);
+    // }
 
     /**
      * Update the specified resource in storage.

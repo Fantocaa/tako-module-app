@@ -51,7 +51,7 @@ export default function CourseShow({ course }: CourseShowProps) {
                         {course.tags?.map((tag) => (
                             <Badge
                                 key={tag.id}
-                                className="text-[10px] font-bold tracking-wider"
+                                className="text-12 font-bold tracking-wider"
                                 style={{
                                     color: tag.color || '#ffffff',
                                     backgroundColor: tag.color

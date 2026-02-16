@@ -201,8 +201,7 @@ class CourseController extends Controller
             $course->tags()->sync($validated['tags']);
         }
 
-        return redirect()->route('courses.show', $course)
-            ->with('success', 'Course updated successfully.');
+        return back()->with('success', 'Course updated successfully.');
     }
 
     /**
