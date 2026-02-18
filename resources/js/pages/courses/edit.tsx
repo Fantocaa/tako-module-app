@@ -12,8 +12,8 @@ interface EditCourseProps {
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Courses',
-        href: '/courses/index',
+        title: 'Course Posts',
+        href: '/courses-index',
     },
     {
         title: 'Edit Course',

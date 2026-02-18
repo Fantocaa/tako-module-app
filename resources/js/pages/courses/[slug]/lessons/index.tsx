@@ -44,7 +44,7 @@ export default function LessonIndex({
     const breadcrumbs: BreadcrumbItem[] = [
         {
             title: 'Courses',
-            href: '/courses/index',
+            href: '/courses-index',
         },
         {
             title: course.title,

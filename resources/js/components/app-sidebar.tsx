@@ -52,7 +52,12 @@ function RenderMenu({
         ): number[] => {
             for (const menu of menus) {
                 if (!menu) continue;
-                if (menu.route && currentUrl.startsWith(menu.route)) {
+                if (
+                    menu.route &&
+                    (currentUrl.startsWith(menu.route) ||
+                        (menu.route === '/courses-index' &&
+                            currentUrl.startsWith('/courses/')))
+                ) {
                     return parents;
                 }
                 if (menu.children && menu.children.length > 0) {
@@ -90,7 +95,10 @@ function RenderMenu({
                     : [];
                 const hasChildren = children.length > 0;
                 const isActive =
-                    menu.route && currentUrl.startsWith(menu.route);
+                    menu.route &&
+                    (currentUrl.startsWith(menu.route) ||
+                        (menu.route === '/courses-index' &&
+                            currentUrl.startsWith('/courses/')));
                 const indentClass = level > 0 ? `pl-${4 + level * 3}` : '';
 
                 const activeClass = isActive

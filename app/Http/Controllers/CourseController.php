@@ -139,11 +139,6 @@ class CourseController extends Controller
         // Set instructor_id to current user
         $validated['instructor_id'] = auth()->id();
 
-        // Auto-generate slug if not provided
-        if (empty($validated['slug'])) {
-            $validated['slug'] = Str::slug($validated['title']);
-        }
-
         $course = Course::create($validated);
 
         // Attach tags if provided
@@ -151,7 +146,7 @@ class CourseController extends Controller
             $course->tags()->sync($validated['tags']);
         }
 
-        return redirect()->route('courses.index')
+        return redirect()->route('lms.index')
             ->with('success', 'Course created successfully.');
     }
 
@@ -211,7 +206,7 @@ class CourseController extends Controller
     {
         $course->delete();
 
-        return redirect()->route('courses.index')
+        return redirect()->route('lms.index')
             ->with('success', 'Course deleted successfully.');
     }
 }

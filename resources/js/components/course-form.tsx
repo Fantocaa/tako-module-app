@@ -82,35 +82,22 @@ export default function CourseForm({
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-                <Label htmlFor="title">Title</Label>
-                <Input
-                    id="title"
-                    value={data.title}
-                    onChange={(e) => setData('title', e.target.value)}
-                    placeholder="e.g. Belajar Laravel Dasar"
-                    required
-                />
-                {errors.title && (
-                    <p className="text-sm text-destructive">{errors.title}</p>
-                )}
-            </div>
-
-            <div className="space-y-2">
-                <Label htmlFor="slug">Slug</Label>
-                <Input
-                    id="slug"
-                    value={data.slug}
-                    onChange={(e) => setData('slug', e.target.value)}
-                    placeholder="e.g. belajar-laravel-dasar"
-                    required
-                />
-                <p className="text-xs text-muted-foreground">
-                    URL: /courses/{data.slug || '...'}
-                </p>
-                {errors.slug && (
-                    <p className="text-sm text-destructive">{errors.slug}</p>
-                )}
+            <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="title">Title</Label>
+                    <Input
+                        id="title"
+                        value={data.title}
+                        onChange={(e) => setData('title', e.target.value)}
+                        placeholder="e.g. Belajar Laravel Dasar"
+                        required
+                    />
+                    {errors.title && (
+                        <p className="text-sm text-destructive">
+                            {errors.title}
+                        </p>
+                    )}
+                </div>
             </div>
 
             <div className="space-y-2">

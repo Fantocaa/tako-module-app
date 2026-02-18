@@ -20,17 +20,17 @@ function formatDuration(seconds: number | null) {
 export default function CourseShow({ course }: CourseShowProps) {
     const { auth } = usePage().props as any;
     const lessons = course.lessons || [];
-    const isOwner = auth?.user?.id === course.instructor?.id;
+    // const isOwner = auth?.user?.id === course.instructor?.id;
 
-    const handleDelete = () => {
-        if (
-            confirm(
-                'Are you sure you want to delete this course? This action cannot be undone.',
-            )
-        ) {
-            router.delete(`/courses/${course.slug}`);
-        }
-    };
+    // const handleDelete = () => {
+    //     if (
+    //         confirm(
+    //             'Are you sure you want to delete this course? This action cannot be undone.',
+    //         )
+    //     ) {
+    //         router.delete(`/courses/${course.slug}`);
+    //     }
+    // };
 
     const handleStartLearning = () => {
         if (lessons.length > 0) {

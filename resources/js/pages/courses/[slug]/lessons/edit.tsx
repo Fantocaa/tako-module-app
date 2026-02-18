@@ -11,8 +11,8 @@ interface EditLessonProps {
 export default function EditLesson({ course, lesson }: EditLessonProps) {
     const breadcrumbs: BreadcrumbItem[] = [
         {
-            title: 'Courses',
-            href: '/courses/index',
+            title: 'Course Posts',
+            href: '/courses-index',
         },
         {
             title: course.title,

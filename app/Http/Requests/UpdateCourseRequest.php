@@ -25,7 +25,7 @@ class UpdateCourseRequest extends FormRequest
 
         return [
             'title' => ['required', 'string', 'max:255'],
-            'slug' => ['required', 'string', 'max:255', 'unique:courses,slug,' . $courseId],
+            'slug' => ['nullable', 'string', 'max:255', 'unique:courses,slug,' . $courseId],
             'description' => ['nullable', 'string'],
             'thumbnail' => ['nullable', 'string', 'max:255'],
             'is_published' => ['boolean'],

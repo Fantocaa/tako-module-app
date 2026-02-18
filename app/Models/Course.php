@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Str;
 
 class Course extends Model
 {
@@ -109,6 +110,12 @@ class Course extends Model
      */
     protected static function booted(): void
     {
+        static::saving(function ($course) {
+            if (empty($course->slug) || $course->isDirty('title')) {
+                $course->slug = Str::slug($course->title);
+            }
+        });
+
         static::saved(fn ($course) => $course->clearInstanceCache());
         static::deleted(fn ($course) => $course->clearInstanceCache());
     }

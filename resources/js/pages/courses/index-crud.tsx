@@ -1,3 +1,13 @@
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -8,13 +18,6 @@ import {
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuSeparator,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import {
     Select,
@@ -27,14 +30,14 @@ import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type Course } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
 import dayjs from 'dayjs';
-import { Edit, MoreHorizontal, Plus, Search, Trash } from 'lucide-react';
+import { Pencil, Plus, Search, Trash2 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
-        title: 'Posts',
-        href: '/courses/index',
+        title: 'Course Posts',
+        href: '#',
     },
 ];
 
@@ -52,32 +55,43 @@ interface CoursesIndexProps {
 
 export default function CoursesIndex({ courses, filters }: CoursesIndexProps) {
     const [searchQuery, setSearchQuery] = useState(filters.search || '');
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
 
     const handleSearch = (term: string) => {
         setSearchQuery(term);
         router.get(
-            '/courses/index',
+            '/courses-index',
             { search: term },
             { preserveState: true, replace: true },
         );
     };
 
-    const handleDelete = (course: Course) => {
-        if (confirm('Are you sure you want to delete this course?')) {
-            router.delete(`/courses/${course.id}`, {
-                onSuccess: () => toast.success('Course deleted successfully'),
+    const handleDeleteClick = (course: Course) => {
+        setCourseToDelete(course);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const confirmDelete = () => {
+        if (courseToDelete) {
+            router.delete(`/courses/${courseToDelete.id}`, {
+                onSuccess: () => {
+                    toast.success('Course deleted successfully');
+                    setIsDeleteDialogOpen(false);
+                    setCourseToDelete(null);
+                },
             });
         }
     };
 
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
-            <Head title="Posts" />
+            <Head title="Course Posts" />
             <div className="flex-1 space-y-6 p-4 md:p-8">
                 <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">
-                            Posts
+                            Course Posts
                         </h1>
                         <p className="text-muted-foreground">
                             Manage your blog posts and articles
@@ -132,15 +146,6 @@ export default function CoursesIndex({ courses, filters }: CoursesIndexProps) {
                                             : '-'}
                                     </CardDescription>
                                 </div>
-                                {/* Optional: Add image thumbnail here if exists */}
-                            </CardHeader>
-                            <CardContent className="flex-1">
-                                <p className="line-clamp-3 text-sm text-muted-foreground">
-                                    {course.description ||
-                                        'No description available.'}
-                                </p>
-                            </CardContent>
-                            <CardFooter className="flex items-center justify-between border-t p-4">
                                 <Badge
                                     variant={
                                         course.is_published
@@ -152,44 +157,35 @@ export default function CoursesIndex({ courses, filters }: CoursesIndexProps) {
                                         ? 'Published'
                                         : 'Draft'}
                                 </Badge>
+                                {/* Optional: Add image thumbnail here if exists */}
+                            </CardHeader>
+                            <CardContent className="flex-1">
+                                <p className="line-clamp-3 text-sm text-muted-foreground">
+                                    {course.description ||
+                                        'No description available.'}
+                                </p>
+                            </CardContent>
+                            <CardFooter className="flex items-center justify-end border-t p-4">
                                 <div className="flex items-center gap-1">
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="h-8 w-8 p-0"
-                                            >
-                                                <MoreHorizontal className="h-4 w-4" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem asChild>
-                                                <Link
-                                                    href={`/courses/${course.id}/edit`}
-                                                >
-                                                    <Edit className="mr-2 h-4 w-4" />
-                                                    Edit
-                                                </Link>
-                                            </DropdownMenuItem>
-                                            <DropdownMenuSeparator />
-                                            <DropdownMenuItem
-                                                className="text-red-600 focus:text-red-500"
-                                                onClick={() =>
-                                                    handleDelete(course)
-                                                }
-                                            >
-                                                <Trash className="mr-2 h-4 w-4" />
-                                                Delete
-                                            </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
-                                    <Button variant="outline" size="sm" asChild>
+                                    <Button variant="outline" size="sm">
                                         <Link
                                             href={`/courses/${course.id}/edit`}
+                                            className="flex items-center gap-2"
                                         >
+                                            <Pencil />
                                             Edit post
                                         </Link>
+                                    </Button>
+                                    <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        className="flex items-center gap-2"
+                                        onClick={() =>
+                                            handleDeleteClick(course)
+                                        }
+                                    >
+                                        <Trash2 />
+                                        Delete
                                     </Button>
                                 </div>
                             </CardFooter>
@@ -226,6 +222,34 @@ export default function CoursesIndex({ courses, filters }: CoursesIndexProps) {
                     </div>
                 )}
             </div>
+
+            <AlertDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>
+                            Are you absolutely sure?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently
+                            delete the course{' '}
+                            <strong>{courseToDelete?.title}</strong> and remove
+                            its data from our servers.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDelete}
+                            className="bg-destructive text-white hover:bg-destructive/90"
+                        >
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </AppLayout>
     );
 }

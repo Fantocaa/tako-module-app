@@ -9,7 +9,7 @@ interface CreateLessonProps {
 
 export default function CreateLesson({ course }: CreateLessonProps) {
     const breadcrumbs: BreadcrumbItem[] = [
-        { title: 'Courses', href: '/courses' },
+        { title: 'Course Posts', href: '/courses-index' },
         {
             title: course.title,
             href: `/courses/${course.slug}/edit`,
