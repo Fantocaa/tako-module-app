@@ -121,6 +121,11 @@ export default function QuestionForm({
 
     // Initialize options based on type
     useEffect(() => {
+        // Prevent clearing data when FIRST loading an edit form
+        if (mode === 'edit' && question && data.type === question.type) {
+            return;
+        }
+
         // Only reset if it's a type with FIXED options structure
         // OR if we are in create mode for flexible types
         const isFixedType = [
@@ -155,7 +160,7 @@ export default function QuestionForm({
                 data.type === 'multiple_select'
             ) {
                 // For flexible types, only reset if creating new
-                if (!question && mode === 'create') {
+                if (mode === 'create') {
                     setData('options', [
                         { id: 'a', text: '' },
                         { id: 'b', text: '' },
@@ -637,6 +642,7 @@ export default function QuestionForm({
                         >
                             {/* Correct Answer Selector */}
                             {(data.type === 'standard' ||
+                                data.type === 'choice' ||
                                 data.type === 'comparison' ||
                                 data.type === 'multiple_select') && (
                                 <div className="mb-1 flex shrink-0 flex-col items-center gap-2">
