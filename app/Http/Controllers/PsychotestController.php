@@ -233,10 +233,11 @@ class PsychotestController extends Controller
         // Handle File Uploads
         if ($request->hasFile('files')) {
             foreach ($request->file('files') as $questionId => $file) {
-                $path = $file->store("psychotest/submissions/{$uuid}/session_{$session}", 'public');
+                $originalName = $file->getClientOriginalName();
+                $path = $file->storeAs("psychotest/submissions/{$uuid}/session_{$session}", $originalName, 'public');
                 $answers[$questionId] = [
                     'file_path' => $path,
-                    'original_name' => $file->getClientOriginalName(),
+                    'original_name' => $originalName,
                     'uploaded_at' => now()->toDateTimeString(),
                     'full_url' => asset('storage/' . $path)
                 ];
@@ -315,11 +316,20 @@ class PsychotestController extends Controller
     {
         $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
 
+        // Load questions for all psycho sessions + skill test
+        $questions = PsychotestQuestion::whereIn('session_number', [1, 2, 3, 4])
+            ->orderBy('session_number')
+            ->orderBy('section_number')
+            ->orderBy('question_number')
+            ->get()
+            ->groupBy('session_number');
+
         return Inertia::render('psychotest/Report', [
             'link' => array_merge($link->toArray(), [
                 'duration' => $link->duration,
-                'included_tests_expanded' => $link->included_tests // Helper for frontend
-            ])
+                'included_tests_expanded' => $link->included_tests
+            ]),
+            'questions' => $questions,
         ]);
     }
 
@@ -350,7 +360,54 @@ class PsychotestController extends Controller
             'nik' => $link->nik,
             'result_psikologi' => route('psychotest.take-test', $link->uuid),
             'report_url' => route('psychotest.report.api', $link->uuid),
+            'report_psikologi_url' => route('psychotest.report-view', $link->uuid),
+            'report_skill_url' => route('psychotest.skill-report-view', $link->uuid),
             'expires_at' => $link->expires_at,
+        ]);
+    }
+
+    /**
+     * Public view: Psychotest report (CFIT, DISC, PAPICOSTIC) with questions + answers.
+     */
+    public function reportView($uuid)
+    {
+        $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
+
+        // Sessions for psycho tests only (1=PAPICOSTIC, 2=CFIT, 3=DISC)
+        $psychoSessions = [1, 2, 3];
+
+        // Load questions for all psycho sessions
+        $questions = PsychotestQuestion::whereIn('session_number', $psychoSessions)
+            ->orderBy('session_number')
+            ->orderBy('section_number')
+            ->orderBy('question_number')
+            ->get()
+            ->groupBy('session_number');
+
+        return Inertia::render('psychotest/ReportView', [
+            'link' => array_merge($link->toArray(), [
+                'duration' => $link->duration,
+            ]),
+            'questions' => $questions,
+        ]);
+    }
+
+    /**
+     * Public view: Skill test report (uploaded files).
+     */
+    public function skillReportView($uuid)
+    {
+        $link = PsychotestLink::where('uuid', $uuid)->firstOrFail();
+
+        // Extract session 4 (skill test) answers
+        $results = $link->results ?? [];
+        $skillAnswers = $results['session_4']['answers'] ?? [];
+
+        return Inertia::render('psychotest/SkillReportView', [
+            'link' => array_merge($link->toArray(), [
+                'duration' => $link->duration,
+            ]),
+            'skillAnswers' => $skillAnswers,
         ]);
     }
 

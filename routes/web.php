@@ -71,5 +71,9 @@ Route::get('/psychotest/error', [PsychotestController::class, 'error'])->name('p
 Route::get('/psychotest/{uuid}', [PsychotestController::class, 'testPage'])->name('psychotest.take-test');
 Route::post('/psychotest/{uuid}/submit', [PsychotestController::class, 'submit'])->name('psychotest.submit');
 
+// Public Report View Routes (for ATS links)
+Route::get('/psychotest/{uuid}/report-view', [PsychotestController::class, 'reportView'])->name('psychotest.report-view');
+Route::get('/psychotest/{uuid}/skill-report-view', [PsychotestController::class, 'skillReportView'])->name('psychotest.skill-report-view');
+
 require __DIR__ . '/settings.php';
 require __DIR__ . '/lms.php';
