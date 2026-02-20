@@ -10,8 +10,6 @@ services:
     restart: always
     container_name: tako-app
     working_dir: /var/www
-    volumes:
-      # - .:/var/www:cached
     environment:
       - APP_ENV=local
       - APP_DEBUG=true
