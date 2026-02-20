@@ -24,7 +24,7 @@ export default function CoursesIndex({
     tags,
     filters,
 }: CoursesIndexProps) {
-    const { auth } = usePage().props as any;
+    // const { auth } = usePage().props as any;
     const [selectedTag, setSelectedTag] = useState<string | null>(
         filters.tag || null,
     );

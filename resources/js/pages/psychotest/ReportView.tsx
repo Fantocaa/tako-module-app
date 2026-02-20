@@ -1,3 +1,7 @@
+import {
+    DiscResultDisplay,
+    type DiscAnalysis,
+} from '@/components/disc-result-display';
 import { Head } from '@inertiajs/react';
 import { CheckCircle2, Circle, FileImage, Printer } from 'lucide-react';
 import { useState } from 'react';
@@ -36,6 +40,7 @@ interface PsychotestLink {
 interface Props {
     link: PsychotestLink;
     questions: Record<string, Question[]>;
+    disc_analysis?: DiscAnalysis | null;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────
@@ -113,11 +118,17 @@ function QuestionCard({
     const options = question.options ?? [];
     const style = SESSION_STYLE[sessionNum] ?? SESSION_STYLE[1];
 
-    const selectedIds: string[] = Array.isArray(answer)
-        ? answer.map(String)
-        : answer != null
-          ? [String(answer)]
-          : [];
+    const isDisc = sessionNum === 3;
+    const discMost = isDisc && answer?.most ? String(answer.most) : null;
+    const discLeast = isDisc && answer?.least ? String(answer.least) : null;
+
+    const selectedIds: string[] = isDisc
+        ? ([discMost, discLeast].filter(Boolean) as string[])
+        : Array.isArray(answer)
+          ? answer.map(String)
+          : answer != null
+            ? [String(answer)]
+            : [];
 
     return (
         <div className="overflow-hidden rounded-xl border border-gray-100 bg-white shadow-sm">
@@ -215,14 +226,18 @@ function QuestionCard({
                                 <span className="mr-0.5 font-bold">
                                     {opt.id}.
                                 </span>
-                                {opt.image_url ? (
-                                    <img
-                                        src={opt.image_url}
-                                        alt={`Option ${opt.id}`}
-                                        className="h-10 w-auto object-contain"
-                                    />
-                                ) : (
-                                    <span>{opt.text ?? opt.id}</span>
+                                <span className="flex-1">
+                                    {opt.text ?? opt.id}
+                                </span>
+                                {isDisc && discMost === String(opt.id) && (
+                                    <span className="rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-black text-white">
+                                        MOST
+                                    </span>
+                                )}
+                                {isDisc && discLeast === String(opt.id) && (
+                                    <span className="rounded bg-red-600 px-1.5 py-0.5 text-[10px] font-black text-white">
+                                        LEAST
+                                    </span>
                                 )}
                             </div>
                         );
@@ -257,7 +272,7 @@ function QuestionCard({
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function ReportView({ link, questions }: Props) {
+export default function ReportView({ link, questions, disc_analysis }: Props) {
     const results = link.results ?? {};
 
     const sessionNums = Object.keys(questions)
@@ -461,6 +476,18 @@ export default function ReportView({ link, questions }: Props) {
                                                             />
                                                         ),
                                                     )}
+                                                </div>
+                                            )}
+
+                                            {/* DISC Analysis */}
+                                            {sNum === 3 && disc_analysis && (
+                                                <div className="mt-6">
+                                                    <p className="mb-3 text-xs font-bold tracking-widest text-gray-400 uppercase">
+                                                        Hasil Penilaian DISC
+                                                    </p>
+                                                    <DiscResultDisplay
+                                                        analysis={disc_analysis}
+                                                    />
                                                 </div>
                                             )}
                                         </div>

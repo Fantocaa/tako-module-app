@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Services\DiscScoringService;
 use App\Models\PsychotestLink;
 use App\Models\PsychotestQuestion;
 use Illuminate\Http\Request;
@@ -324,12 +325,31 @@ class PsychotestController extends Controller
             ->get()
             ->groupBy('session_number');
 
+        // DISC scoring
+        $discAnalysis = null;
+        $discAnswers  = data_get($link->results, 'session_3.answers', []);
+        if (!empty($discAnswers)) {
+            $discQuestions = $questions->get(3);
+            $formattedAnswers = [];
+            foreach ($discAnswers as $qId => $ans) {
+                $q = $discQuestions ? $discQuestions->firstWhere('id', (int)$qId) : null;
+                if ($q) {
+                    $formattedAnswers[] = array_merge($ans, [
+                        'question_number' => $q->question_number
+                    ]);
+                }
+            }
+            $scorer       = new DiscScoringService();
+            $discAnalysis = $scorer->score($formattedAnswers);
+        }
+
         return Inertia::render('psychotest/Report', [
             'link' => array_merge($link->toArray(), [
                 'duration' => $link->duration,
                 'included_tests_expanded' => $link->included_tests
             ]),
-            'questions' => $questions,
+            'questions'    => $questions,
+            'disc_analysis' => $discAnalysis,
         ]);
     }
 
@@ -384,11 +404,30 @@ class PsychotestController extends Controller
             ->get()
             ->groupBy('session_number');
 
+        // DISC scoring
+        $discAnalysis = null;
+        $discAnswers  = data_get($link->results, 'session_3.answers', []);
+        if (!empty($discAnswers)) {
+            $discQuestions = $questions->get(3);
+            $formattedAnswers = [];
+            foreach ($discAnswers as $qId => $ans) {
+                $q = $discQuestions ? $discQuestions->firstWhere('id', (int)$qId) : null;
+                if ($q) {
+                    $formattedAnswers[] = array_merge($ans, [
+                        'question_number' => $q->question_number
+                    ]);
+                }
+            }
+            $scorer       = new DiscScoringService();
+            $discAnalysis = $scorer->score($formattedAnswers);
+        }
+
         return Inertia::render('psychotest/ReportView', [
             'link' => array_merge($link->toArray(), [
                 'duration' => $link->duration,
             ]),
-            'questions' => $questions,
+            'questions'     => $questions,
+            'disc_analysis' => $discAnalysis,
         ]);
     }
 

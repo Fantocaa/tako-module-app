@@ -1,3 +1,7 @@
+import {
+    DiscResultDisplay,
+    type DiscAnalysis,
+} from '@/components/disc-result-display';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
@@ -52,6 +56,7 @@ interface PsychotestLink {
 interface Props {
     link: PsychotestLink;
     questions: Record<string, Question[]>;
+    disc_analysis?: DiscAnalysis | null;
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -106,11 +111,17 @@ function QuestionCard({
     const options = question.options ?? [];
     const colors = SESSION_COLORS[sessionNum] ?? SESSION_COLORS[1];
 
-    const selectedIds: string[] = Array.isArray(answer)
-        ? answer.map(String)
-        : answer != null
-          ? [String(answer)]
-          : [];
+    const isDisc = sessionNum === 3;
+    const discMost = isDisc && answer?.most ? String(answer.most) : null;
+    const discLeast = isDisc && answer?.least ? String(answer.least) : null;
+
+    const selectedIds: string[] = isDisc
+        ? ([discMost, discLeast].filter(Boolean) as string[])
+        : Array.isArray(answer)
+          ? answer.map(String)
+          : answer != null
+            ? [String(answer)]
+            : [];
 
     return (
         <div className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
@@ -196,15 +207,17 @@ function QuestionCard({
                                 key={opt.id}
                                 className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors ${
                                     isSelected
-                                        ? colors.selected + ' font-semibold'
-                                        : 'border-border bg-background text-muted-foreground'
+                                        ? colors.selected + ' border-indigo-200'
+                                        : 'border-border bg-card text-muted-foreground'
                                 }`}
                             >
                                 {isSelected ? (
-                                    <CheckCircle2 className="h-4 w-4 shrink-0" />
+                                    <CheckCircle2
+                                        className={`h-4 w-4 shrink-0 ${colors.accent}`}
+                                    />
                                 ) : (
-                                    <Circle className="h-4 w-4 shrink-0 text-muted-foreground/40" />
-                                )}
+                                    <Circle className="h-4 w-4 shrink-0 text-muted/50" />
+                                )}{' '}
                                 <span className="mr-0.5 font-bold">
                                     {opt.id}.
                                 </span>
@@ -303,7 +316,11 @@ function SkillAnswerCard({
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
-export default function PsychotestReport({ link, questions }: Props) {
+export default function PsychotestReport({
+    link,
+    questions,
+    disc_analysis,
+}: Props) {
     const breadcrumbs: BreadcrumbItem[] = [
         { title: 'Psychotest Management', href: '/psychotest-link' },
         {
@@ -582,6 +599,22 @@ export default function PsychotestReport({ link, questions }: Props) {
                                                         )}
                                                     </div>
                                                 )}
+
+                                                {/* DISC Analysis — show scoring below Q&A */}
+                                                {sNum === 3 &&
+                                                    disc_analysis && (
+                                                        <div className="mt-6">
+                                                            <p className="mb-3 text-sm font-bold tracking-widest text-muted-foreground uppercase">
+                                                                Hasil Penilaian
+                                                                DISC
+                                                            </p>
+                                                            <DiscResultDisplay
+                                                                analysis={
+                                                                    disc_analysis
+                                                                }
+                                                            />
+                                                        </div>
+                                                    )}
                                             </TabsContent>
                                         );
                                     })}
