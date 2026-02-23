@@ -218,23 +218,36 @@ export default function TakeTest({
         activeSection?.secNum === sections[sections.length - 1]?.secNum;
 
     const isAllAnswered = activeSection?.questions.every((q) => {
+        const answer = data.answers[q.id];
+
         if (q.type === 'disc') {
-            const answer = data.answers[q.id];
             return answer?.most && answer?.least;
         }
-        if (q.type === 'checkbox') {
-            const answer = data.answers[q.id];
-            return (answer as string[])?.length === 2;
+
+        if (q.type === 'checkbox' || q.type === 'multiple_select') {
+            return Array.isArray(answer) && answer.length === 2;
         }
+
         if (q.type === 'file_assignment') {
-            return data.files[q.id] || data.answers[q.id]?.file_path;
+            return data.files[q.id] || answer?.file_path;
         }
-        const answer = data.answers[q.id];
-        return answer !== undefined && answer !== null && answer !== '';
+
+        // Standard, forced, comparison, etc.
+        return (
+            answer !== undefined &&
+            answer !== null &&
+            answer !== '' &&
+            (Array.isArray(answer) ? answer.length > 0 : true)
+        );
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+
+        if (!isAllAnswered) {
+            alert('Harap lengkapi semua jawaban sebelum melanjutkan.');
+            return;
+        }
 
         setIsSubmitting(true);
 
@@ -762,15 +775,15 @@ export default function TakeTest({
                                                 Math.max(
                                                     ...link.allowed_sessions,
                                                 ) ? (
-                                                'FINALIZE TEST'
+                                                'Finalize Test'
                                             ) : !link.allowed_sessions &&
                                               session === 3 ? (
-                                                'FINALIZE TEST'
+                                                'Finalize Test'
                                             ) : (
-                                                'SUBMIT & CONTINUE'
+                                                'Submit & Continue'
                                             )
                                         ) : (
-                                            'NEXT SUBTEST'
+                                            'Next Subtest'
                                         )}
                                     </Button>
                                     {!isAllAnswered && (

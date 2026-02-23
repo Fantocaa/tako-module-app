@@ -2,8 +2,7 @@ services:
   app:
     build:
       context: .
-      dockerfile: .docker/php/Dockerfile
-      target: prod
+      dockerfile: .docker/php/Dockerfile.fpm
       args:
         WWWUSER: ${WWWUSER:-1000}
         WWWGROUP: ${WWWGROUP:-1000}
@@ -13,6 +12,8 @@ services:
     environment:
       - APP_ENV=production
       - APP_DEBUG=false
+    volumes:
+      - .:/var/www
     depends_on:
       - postgres
       - redis
@@ -27,6 +28,7 @@ services:
       - '80:80'
       - '443:443'
     volumes:
+      - .:/var/www
       - ./.docker/nginx:/etc/nginx/conf.d
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
