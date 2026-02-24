@@ -1,67 +1,150 @@
-FROM dunglas/frankenphp:1-php8.4-alpine AS base
+FROM php:8.4-fpm
 
-# Set working directory
-WORKDIR /var/www
+ENV COMPOSER_MEMORY_LIMIT='-1'
 
-# Install system dependencies
-RUN apk add --no-cache \
-    bash \
-    zip \
-    unzip \
-    git \
-    curl \
-    supervisor \
-    tzdata \
-    libpng-dev \
-    libjpeg-turbo-dev \
-    freetype-dev \
-    postgresql-dev \
-    rabbitmq-c-dev \
-    linux-headers \
-    nodejs \
-    npm \
-    shadow
+ENV PS1="\u@\h:\w\\$ "
+ENV TZ="Asia/Jakarta"
 
-# Install PHP extensions using FrankenPHP helper
-RUN install-php-extensions \
-    gd \
-    pdo_pgsql \
-    pgsql \
-    opcache \
-    bcmath \
-    sockets \
-    pcntl \
-    redis \
-    amqp \
-    msgpack \
-    intl \
-    zip
+RUN apt-get update && \
+    apt-get install -y --force-yes --no-install-recommends \
+        libmemcached-dev \
+        libmcrypt-dev \
+        libreadline-dev \
+        libgmp-dev \
+        libzip-dev \
+        libz-dev \
+        libpq-dev \
+        libjpeg-dev \
+        libpng-dev \
+        libfreetype6-dev \
+        libssl-dev \
+        openssh-server \
+        libmagickwand-dev \
+        git \
+        cron \
+        nano \
+        libxml2-dev
 
-# Install Composer
-COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+# Install soap extension
+RUN docker-php-ext-install soap
 
-# Copy application files
-COPY . .
+# Install exif extension for image manipulation
+RUN docker-php-ext-install exif
 
-# Adjust permissions for www-data
-ARG WWWUSER=1000
-ARG WWWGROUP=1000
+# Install the PHP pcntl extension
+RUN docker-php-ext-install pcntl
 
-RUN groupmod -g ${WWWGROUP} www-data || true \
-    && usermod -u ${WWWUSER} www-data || true \
-    && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
+# Install the PHP intl extension
+RUN docker-php-ext-install intl
 
-# Copy Caddyfile
-COPY .docker/php/Caddyfile /etc/caddy/Caddyfile
+# Install the PHP gmp extension
+RUN docker-php-ext-install gmp
 
-# Default entrypoint (FrankenPHP comes with its own, but we can wrap it if needed)
-FROM base AS dev
-RUN install-php-extensions xdebug
-COPY .docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
-CMD ["php", "artisan", "octane:frankenphp", "--host=0.0.0.0", "--port=80"]
+# Install the PHP zip extension
+RUN docker-php-ext-install zip
 
-FROM base AS prod
-COPY .docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
-RUN composer install --no-dev --optimize-autoloader \
-    && npm install && npm run build
-CMD ["php", "artisan", "octane:frankenphp", "--host=0.0.0.0", "--port=80"]
+# Install the PHP pdo_mysql extension
+# RUN docker-php-ext-install pdo_mysql
+
+# Install the PHP pdo_pgsql extension
+RUN docker-php-ext-install pdo_pgsql
+
+# Install the PHP bcmath extension
+RUN docker-php-ext-install bcmath
+
+#####################################
+# PHPRedis:
+#####################################
+RUN pecl install redis && docker-php-ext-enable redis
+RUN pecl install mongodb && docker-php-ext-enable mongodb
+
+#####################################
+# Imagick:
+#####################################
+RUN pecl install imagick && \
+    docker-php-ext-enable imagick
+
+#####################################
+# GD:
+#####################################
+RUN docker-php-ext-configure gd --with-freetype --with-jpeg && \
+    docker-php-ext-install gd
+
+#####################################
+# xDebug:
+#####################################
+# Install the xdebug extension
+RUN pecl install xdebug
+
+#####################################
+# PHP Memcached:
+#####################################
+# Install the php memcached extension
+RUN pecl install memcached && docker-php-ext-enable memcached
+
+#####################################
+# Composer:
+#####################################
+# Install composer and add its bin to the PATH.
+RUN curl -s http://getcomposer.org/installer | php && \
+    mv composer.phar /usr/local/bin/composer
+
+
+#####################################
+# Node.js & NPM (NodeSource):
+#####################################
+# Kita pakai Node.js v20 (LTS) atau v22 (Current). Di sini saya contohkan v20.
+RUN curl -fsSL https://deb.nodesource.com/setup_24.x | bash - && \
+    apt-get install -y nodejs
+
+# Verifikasi instalasi (Opsional saat build)
+RUN node -v && npm -v
+
+#####################################
+# Laravel Schedule Cron Job:
+#####################################
+RUN echo "* * * * * root /usr/local/bin/php /var/www/html/artisan schedule:run >> /dev/null 2>&1" >> /etc/cron.d/laravel-scheduler
+RUN chmod 0644 /etc/cron.d/laravel-scheduler
+
+#
+#--------------------------------------------------------------------------
+# Final Touch
+#--------------------------------------------------------------------------
+#
+
+ADD ./local.ini /usr/local/etc/php/conf.d
+
+#####################################
+# Aliases:
+#####################################
+# docker-compose exec php-fpm dep --> locally installed Deployer binaries
+RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/vendor/bin/dep "$@"' > /usr/bin/dep
+RUN chmod +x /usr/bin/dep
+# docker-compose exec php-fpm art --> php artisan
+RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan "$@"' > /usr/bin/art
+RUN chmod +x /usr/bin/art
+# docker-compose exec php-fpm migrate --> php artisan migrate
+RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan migrate "$@"' > /usr/bin/migrate
+RUN chmod +x /usr/bin/migrate
+# docker-compose exec php-fpm fresh --> php artisan migrate:fresh --seed
+RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan migrate:fresh --seed' > /usr/bin/fresh
+RUN chmod +x /usr/bin/fresh
+# docker-compose exec php-fpm t --> run the tests for the project and generate testdox
+RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan config:clear\n/var/www/vendor/bin/phpunit -d memory_limit=2G --stop-on-error --stop-on-failure --testdox-text=tests/report.txt "$@"' > /usr/bin/t
+RUN chmod +x /usr/bin/t
+# docker-compose exec php-fpm d --> run the Laravel Dusk browser tests for the project
+RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan config:clear\n/bin/bash\n/usr/local/bin/php /var/www/html/artisan dusk -d memory_limit=2G --stop-on-error --stop-on-failure --testdox-text=tests/report-dusk.txt "$@"' > /usr/bin/d
+RUN chmod +x /usr/bin/d
+
+RUN rm -r /var/lib/apt/lists/*
+
+WORKDIR /var/www/html
+
+COPY ./docker-entrypoint.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
+RUN ln -s /usr/local/bin/docker-entrypoint.sh /
+
+ENTRYPOINT ["docker-entrypoint.sh"]
+
+EXPOSE 9000
+CMD ["php-fpm"]

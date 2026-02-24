@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class Lesson extends Model
 {
@@ -67,6 +68,12 @@ class Lesson extends Model
      */
     protected static function booted(): void
     {
+        static::deleting(function ($lesson) {
+            if ($lesson->video_path && Storage::disk('public')->exists($lesson->video_path)) {
+                Storage::disk('public')->delete($lesson->video_path);
+            }
+        });
+
         static::saved(function ($lesson) {
             $lesson->course?->clearInstanceCache();
         });

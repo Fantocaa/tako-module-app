@@ -110,6 +110,11 @@ class Course extends Model
      */
     protected static function booted(): void
     {
+        static::deleting(function ($course) {
+            // Delete lessons individually to trigger their model events (for file cleanup)
+            $course->lessons->each(fn ($lesson) => $lesson->delete());
+        });
+
         static::saving(function ($course) {
             if (empty($course->slug) || $course->isDirty('title')) {
                 $course->slug = Str::slug($course->title);

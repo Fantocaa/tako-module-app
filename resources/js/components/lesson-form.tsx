@@ -11,6 +11,7 @@ import {
 import { useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { Editor } from './blocks/editor-md/editor';
+import InputError from './input-error';
 import { Switch } from './ui/switch';
 
 interface LessonFormProps {
@@ -82,11 +83,7 @@ export default function LessonForm({
                         placeholder="e.g. Introduction to Routing"
                         required
                     />
-                    {errors.title && (
-                        <p className="text-sm text-destructive">
-                            {errors.title}
-                        </p>
-                    )}
+                    <InputError message={errors.title} />
                 </div>
                 <div className="col-span-3 grid grid-cols-6 gap-4">
                     <div className="col-span-1 space-y-2">
@@ -105,11 +102,7 @@ export default function LessonForm({
                                 <SelectItem value="article">Article</SelectItem>
                             </SelectContent>
                         </Select>
-                        {errors.content_type && (
-                            <p className="text-sm text-destructive">
-                                {errors.content_type}
-                            </p>
-                        )}
+                        <InputError message={errors.content_type} />
                     </div>
                     {data.content_type === 'video' ? (
                         <>
@@ -158,11 +151,7 @@ export default function LessonForm({
                                         }
                                         placeholder="https://www.youtube.com/watch?v=..."
                                     />
-                                    {errors.video_url && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.video_url}
-                                        </p>
-                                    )}
+                                    <InputError message={errors.video_url} />
                                 </div>
                             ) : (
                                 <div className="col-span-3 space-y-2">
@@ -187,11 +176,7 @@ export default function LessonForm({
                                             Current file: {lesson.video_path}
                                         </p>
                                     )}
-                                    {errors.video_file && (
-                                        <p className="text-sm text-destructive">
-                                            {errors.video_file}
-                                        </p>
-                                    )}
+                                    <InputError message={errors.video_file} />
                                 </div>
                             )}
                         </>
@@ -212,12 +197,10 @@ export default function LessonForm({
                     }
                 />
                 <input type="hidden" name="content" value={data.content} />
-                {errors.content && (
-                    <p className="text-sm text-destructive">{errors.content}</p>
-                )}
+                <InputError message={errors.content} />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            {/* <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="duration">Duration (seconds)</Label>
                     <Input
@@ -251,7 +234,7 @@ export default function LessonForm({
                 {errors.order && (
                     <p className="text-sm text-destructive">{errors.order}</p>
                 )}
-            </div>
+            </div> */}
 
             <div className="flex flex-col gap-4 sm:flex-row">
                 <div className="flex items-center space-x-2">
