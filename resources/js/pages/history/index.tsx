@@ -1,4 +1,5 @@
 import AppNavbar from '@/components/app-navbar';
+import { Footer } from '@/components/footer';
 import { Container } from '@/components/ui/container';
 import { formatDuration } from '@/lib/utils';
 import { Head, Link } from '@inertiajs/react';
@@ -128,6 +129,8 @@ export default function HistoryIndex({ history }: HistoryIndexProps) {
                     </div>
                 )}
             </div>
+
+            <Footer />
         </div>
     );
 }

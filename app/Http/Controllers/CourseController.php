@@ -178,8 +178,21 @@ class CourseController extends Controller
             }, 'tags', 'instructor']);
         });
 
+        $userProgress = auth()->user()->lessonProgress()
+            ->whereIn('lesson_id', $course->lessons->pluck('id'))
+            ->get()
+            ->keyBy('lesson_id');
+
+        $lessonsWithProgress = $course->lessons->map(function ($lesson) use ($userProgress) {
+            $progress = $userProgress->get($lesson->id);
+            return array_merge($lesson->toArray(), [
+                'completed_at' => $progress?->completed_at,
+            ]);
+        });
+
         return Inertia::render('courses/[slug]', [
             'course' => $course,
+            'lessons' => $lessonsWithProgress,
             'isWatchLater' => auth()->user()->watchLaterCourses()->where('course_id', $course->id)->exists(),
         ]);
     }

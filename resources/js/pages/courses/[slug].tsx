@@ -1,28 +1,25 @@
 import AppNavbar from '@/components/app-navbar';
+import { Footer } from '@/components/footer';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
-import type { Course } from '@/types';
+import { formatDuration } from '@/lib/utils';
+import type { Course, Lesson } from '@/types';
 import { Head, router } from '@inertiajs/react';
 import { Clock, PlayCircle } from 'lucide-react';
 
 interface CourseDetailProps {
     course: Course;
+    lessons: (Lesson & { completed_at: string | null })[];
     isWatchLater: boolean;
-}
-
-function formatDuration(seconds: number | null) {
-    if (!seconds) return '0:00';
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
 export default function CourseDetail({
     course,
+    lessons: incomingLessons,
     isWatchLater,
 }: CourseDetailProps) {
-    const lessons = course.lessons || [];
+    const lessons = incomingLessons || course.lessons || [];
 
     const handleStartLearning = () => {
         if (lessons.length > 0) {
@@ -118,12 +115,35 @@ export default function CourseDetail({
                                         <span className="text-sm font-medium text-muted-fg/40">
                                             {index + 1}.
                                         </span>
-                                        <h3 className="text-base font-medium text-foreground/80 group-hover:text-primary">
+                                        <h3
+                                            className={`text-base font-medium transition-colors ${
+                                                lesson.completed_at
+                                                    ? 'text-emerald-500'
+                                                    : 'text-foreground/80 group-hover:text-primary'
+                                            }`}
+                                        >
                                             {lesson.title}
+                                            {lesson.completed_at && (
+                                                <Badge
+                                                    variant="secondary"
+                                                    className="ml-3 bg-emerald-500/10 text-[10px] font-bold text-emerald-500"
+                                                >
+                                                    Selesai
+                                                </Badge>
+                                            )}
                                         </h3>
                                     </div>
-                                    <span className="text-sm text-muted-fg/40">
-                                        {formatDuration(lesson.duration)}
+                                    <span
+                                        className={`text-sm ${
+                                            lesson.completed_at
+                                                ? 'text-emerald-500/60'
+                                                : 'text-muted-fg/40'
+                                        }`}
+                                    >
+                                        {formatDuration(
+                                            lesson.duration,
+                                            lesson.content_type,
+                                        )}
                                     </span>
                                 </button>
                             ))}
@@ -135,6 +155,8 @@ export default function CourseDetail({
                     )}
                 </div>
             </div>
+
+            <Footer />
         </div>
     );
 }

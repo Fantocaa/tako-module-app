@@ -1,5 +1,6 @@
 import AppNavbar from '@/components/app-navbar';
 import { CourseCard } from '@/components/course-card';
+import { Footer } from '@/components/footer';
 import { Container } from '@/components/ui/container';
 import { Head, Link } from '@inertiajs/react';
 import { Clock, PlayCircle } from 'lucide-react';
@@ -66,6 +67,8 @@ export default function WatchLaterIndex({ courses }: WatchLaterIndexProps) {
                     </div>
                 )}
             </div>
+
+            <Footer />
         </div>
     );
 }

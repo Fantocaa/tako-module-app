@@ -26,6 +26,7 @@ import {
     CheckCircle2,
     ChevronLeft,
     ChevronRight,
+    Clock,
     ListVideo,
     PanelLeftClose,
     PanelLeftOpen,
@@ -219,10 +220,12 @@ export default function LessonShow({
                                                     }`}
                                                 >
                                                     <div
-                                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
+                                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
                                                             l.id === lesson.id
                                                                 ? 'bg-primary text-primary-fg'
-                                                                : 'bg-secondary text-muted-fg group-hover:bg-secondary/80 group-hover:text-foreground'
+                                                                : l.completed_at
+                                                                  ? 'bg-emerald-500/10 text-emerald-500'
+                                                                  : 'bg-secondary text-muted-fg group-hover:bg-secondary/80 group-hover:text-foreground'
                                                         }`}
                                                     >
                                                         {l.completed_at ? (
@@ -232,14 +235,32 @@ export default function LessonShow({
                                                         )}
                                                     </div>
                                                     <div className="min-w-0 flex-1">
-                                                        <h3 className="truncate text-sm leading-tight font-semibold">
+                                                        <h3
+                                                            className={`truncate text-sm leading-tight font-semibold transition-colors ${
+                                                                l.id ===
+                                                                lesson.id
+                                                                    ? 'text-primary'
+                                                                    : l.completed_at
+                                                                      ? 'text-emerald-500'
+                                                                      : 'text-muted-fg group-hover:text-foreground'
+                                                            }`}
+                                                        >
                                                             {l.title}
                                                         </h3>
                                                         <div className="mt-1 flex items-center gap-2">
                                                             <div className="flex items-center gap-2 text-[10px] font-bold tracking-wider uppercase">
-                                                                <span>
+                                                                <span
+                                                                    className={
+                                                                        l.completed_at &&
+                                                                        l.id !==
+                                                                            lesson.id
+                                                                            ? 'text-emerald-500/60'
+                                                                            : 'text-muted-fg/60'
+                                                                    }
+                                                                >
                                                                     {formatDuration(
                                                                         l.duration,
+                                                                        l.content_type as any,
                                                                     )}
                                                                 </span>
                                                             </div>
@@ -347,26 +368,37 @@ export default function LessonShow({
                                     />
                                 )}
 
-                            <div className="mt-10">
-                                <div className="space-y-4">
-                                    <h1 className="text-2xl font-bold tracking-tight lg:text-3xl">
+                            <div className="mt-8 max-w-3xl lg:mt-0">
+                                <div className="mb-10 lg:mb-16">
+                                    <h1 className="text-3xl leading-snug font-bold tracking-tight lg:text-4xl xl:text-5xl">
                                         {lesson.title}
                                     </h1>
+                                    <p className="mt-4 flex items-center gap-2 text-sm font-medium text-muted-fg">
+                                        <Clock className="h-4 w-4" />
+                                        <span>
+                                            {formatDuration(
+                                                lesson.duration,
+                                                lesson.content_type as any,
+                                            )}
+                                            {lesson.content_type === 'video'
+                                                ? ''
+                                                : ' read'}
+                                        </span>
+                                    </p>
+                                </div>
 
-                                    <div className="prose prose-lg max-w-none prose-neutral dark:prose-invert">
-                                        {lesson.content ? (
-                                            <ReactMarkdown
-                                                remarkPlugins={[remarkGfm]}
-                                            >
-                                                {lesson.content}
-                                            </ReactMarkdown>
-                                        ) : (
-                                            <p className="text-muted-fg">
-                                                Mari kita mulai belajar materi
-                                                ini.
-                                            </p>
-                                        )}
-                                    </div>
+                                <div className="prose prose-lg max-w-none prose-neutral lg:prose-xl dark:prose-invert prose-headings:scroll-mt-28 prose-headings:font-bold prose-h1:text-4xl prose-h2:text-3xl prose-h3:text-2xl prose-p:leading-relaxed">
+                                    {lesson.content ? (
+                                        <ReactMarkdown
+                                            remarkPlugins={[remarkGfm]}
+                                        >
+                                            {lesson.content}
+                                        </ReactMarkdown>
+                                    ) : (
+                                        <p className="text-muted-fg italic">
+                                            Mari kita mulai belajar materi ini.
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -408,10 +440,12 @@ export default function LessonShow({
                                             }`}
                                         >
                                             <div
-                                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold ${
+                                                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-xs font-bold transition-colors ${
                                                     l.id === lesson.id
                                                         ? 'bg-primary text-primary-fg'
-                                                        : 'bg-secondary text-muted-fg group-hover:bg-secondary/80 group-hover:text-foreground'
+                                                        : l.completed_at
+                                                          ? 'bg-emerald-500/10 text-emerald-500'
+                                                          : 'bg-secondary text-muted-fg group-hover:bg-secondary/80 group-hover:text-foreground'
                                                 }`}
                                             >
                                                 {l.completed_at ? (
@@ -421,14 +455,31 @@ export default function LessonShow({
                                                 )}
                                             </div>
                                             <div className="min-w-0 flex-1">
-                                                <h3 className="truncate text-sm leading-tight font-semibold">
+                                                <h3
+                                                    className={`truncate text-sm leading-tight font-semibold transition-colors ${
+                                                        l.id === lesson.id
+                                                            ? 'text-primary'
+                                                            : l.completed_at
+                                                              ? 'text-emerald-500'
+                                                              : 'text-muted-fg group-hover:text-foreground'
+                                                    }`}
+                                                >
                                                     {l.title}
                                                 </h3>
                                                 <div className="mt-1 flex items-center gap-2">
                                                     <div className="flex items-center gap-2 text-[10px] font-bold tracking-wider uppercase">
-                                                        <span>
+                                                        <span
+                                                            className={
+                                                                l.completed_at &&
+                                                                l.id !==
+                                                                    lesson.id
+                                                                    ? 'text-emerald-500/60'
+                                                                    : 'text-muted-fg/60'
+                                                            }
+                                                        >
                                                             {formatDuration(
                                                                 l.duration,
+                                                                l.content_type as any,
                                                             )}
                                                         </span>
                                                     </div>

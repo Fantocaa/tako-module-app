@@ -1,5 +1,6 @@
 import AppNavbar from '@/components/app-navbar';
 import { CourseCard } from '@/components/course-card';
+import { Footer } from '@/components/footer';
 import { Pagination } from '@/components/pagination';
 import { Container } from '@/components/ui/container';
 import type { Course, Tag } from '@/types';
@@ -142,6 +143,8 @@ export default function CoursesIndex({
                     </motion.div>
                 </AnimatePresence>
             </div>
+
+            <Footer />
         </div>
     );
 }
