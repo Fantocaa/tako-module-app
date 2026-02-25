@@ -88,6 +88,13 @@ class Course extends Model
     {
         return $this->belongsToMany(Position::class, 'course_position');
     }
+    /**
+     * Get the users who have marked this course to watch later.
+     */
+    public function watchLaterUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'watch_later')->withTimestamps();
+    }
 
     /**
      * Get the lesson count attribute.

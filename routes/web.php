@@ -24,6 +24,9 @@ Route::get('/', function () {
 
 Route::middleware(['auth', 'verified', 'menu.permission'])->group(function () {
     Route::get('dashboard', function () {
+        if (auth()->user()->hasRole('user')) {
+            return redirect()->route('courses.index');
+        }
         return Inertia::render('dashboard');
     })->name('dashboard');
 

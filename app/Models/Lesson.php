@@ -5,8 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class Lesson extends Model
 {
@@ -16,12 +19,15 @@ class Lesson extends Model
         'content_type',
         'video_url',
         'video_path',
+        'pdf_path',
         'content',
         'duration',
         'order',
         'is_published',
         'is_preview',
     ];
+
+    protected $appends = ['slug'];
 
     protected $casts = [
         'content_type' => 'string',
@@ -42,7 +48,7 @@ class Lesson extends Model
     /**
      * Get the progress records for the lesson.
      */
-    public function progress(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function progress(): HasMany
     {
         return $this->hasMany(LessonProgress::class);
     }
@@ -50,7 +56,7 @@ class Lesson extends Model
     /**
      * Get the progress for the current authenticated user.
      */
-    public function currentUserProgress(): \Illuminate\Database\Eloquent\Relations\HasOne
+    public function currentUserProgress(): HasOne
     {
         return $this->hasOne(LessonProgress::class)->where('user_id', auth()->id());
     }
@@ -61,6 +67,14 @@ class Lesson extends Model
     public function scopeOrdered(Builder $query): Builder
     {
         return $query->orderBy('order');
+    }
+
+    /**
+     * Get the slug for the lesson title.
+     */
+    public function getSlugAttribute(): string
+    {
+        return Str::slug($this->title);
     }
 
     /**

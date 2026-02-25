@@ -34,6 +34,7 @@ export default function LessonForm({
         content_type: lesson?.content_type || 'video',
         video_url: lesson?.video_url || '',
         video_file: null as File | null,
+        pdf_file: null as File | null,
         content: lesson?.content || '',
         duration: lesson?.duration || 0,
         order: lesson?.order || '',
@@ -100,6 +101,7 @@ export default function LessonForm({
                             <SelectContent>
                                 <SelectItem value="video">Video</SelectItem>
                                 <SelectItem value="article">Article</SelectItem>
+                                <SelectItem value="pdf">PDF</SelectItem>
                             </SelectContent>
                         </Select>
                         <InputError message={errors.content_type} />
@@ -180,6 +182,29 @@ export default function LessonForm({
                                 </div>
                             )}
                         </>
+                    ) : data.content_type === 'pdf' ? (
+                        <div className="col-span-5 space-y-2">
+                            <Label htmlFor="pdf_file">Upload PDF File</Label>
+                            <Input
+                                id="pdf_file"
+                                type="file"
+                                accept="application/pdf"
+                                onChange={(e) =>
+                                    setData(
+                                        'pdf_file',
+                                        e.target.files
+                                            ? e.target.files[0]
+                                            : null,
+                                    )
+                                }
+                            />
+                            {lesson?.pdf_path && !data.pdf_file && (
+                                <p className="text-xs text-muted-foreground">
+                                    Current file: {lesson.pdf_path}
+                                </p>
+                            )}
+                            <InputError message={errors.pdf_file} />
+                        </div>
                     ) : null}
                 </div>
             </div>
