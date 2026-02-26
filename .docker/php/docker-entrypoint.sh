@@ -63,6 +63,9 @@ fi
 echo "🚀 Running Laravel Runtime Setup..."
 
 # 3. Laravel Specifics
+echo "🧹 Clearing all cached configurations..."
+php artisan optimize:clear
+
 echo "🔗 Creating storage link..."
 php artisan storage:link --force
 

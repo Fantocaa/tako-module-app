@@ -100,7 +100,7 @@ COPY . /var/www/html
 WORKDIR /var/www/html
 
 # Environment Setup
-RUN if [ ! -f .env ]; then cp .env.example .env; fi
+RUN cp .env.example .env
 
 # Composer install
 RUN composer install --no-interaction --optimize-autoloader
