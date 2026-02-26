@@ -8,6 +8,7 @@ use App\Http\Requests\StoreLessonRequest;
 use App\Http\Requests\UpdateLessonProgressRequest;
 use App\Http\Requests\UpdateLessonRequest;
 use App\Models\LessonProgress;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -255,13 +256,28 @@ class LessonController extends Controller
 
         if (!$lesson) abort(404);
 
+        $progress = LessonProgress::where('user_id', $user->id)
+            ->where('lesson_id', $lesson->id)
+            ->first();
+
+        $completedAt = null;
+        if ($request->is_completed) {
+            $completedAt = $progress?->completed_at ?? now();
+        } else {
+            $completedAt = $progress?->completed_at;
+        }
+
         $progress = LessonProgress::updateOrCreate(
             ['user_id' => $user->id, 'lesson_id' => $lesson->id],
             [
                 'last_position' => $request->last_position,
-                'completed_at' => $request->is_completed ? now() : null,
+                'completed_at' => $completedAt,
             ]
         );
+
+        if ($request->is_completed) {
+            return back()->with('success', 'Materi selesai!');
+        }
 
         return response()->json([
             'success' => true,
@@ -272,7 +288,7 @@ class LessonController extends Controller
     /**
      * Stream a PDF file securely as base64 to avoid extension interception (IDM).
      */
-    public function streamPdf(string $lessonSlug): \Illuminate\Http\JsonResponse
+    public function streamPdf(string $lessonSlug): JsonResponse
     {
         // Find lesson by slug or ID
         $lesson = Lesson::all()->first(function($l) use ($lessonSlug) {

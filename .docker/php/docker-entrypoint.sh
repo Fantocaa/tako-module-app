@@ -1,5 +1,4 @@
 #!/bin/bash
-set -e
 
 # Destination of env file inside container
 ENV_FILE="/var/www/.env"
@@ -58,35 +57,18 @@ elif [ -f /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini ]; then
 fi
 
 # ---------------------------------------------------------
-# Laravel Automation Setup
+# Laravel Runtime Setup (Only database & links)
 # ---------------------------------------------------------
 
-echo "🚀 Starting Laravel Automation Setup..."
-
-# 1. Environment Setup
-if [ ! -f .env ]; then
-    echo "📄 Creating .env file from .env.example..."
-    cp .env.example .env
-    php artisan key:generate --force
-fi
-
-# 2. Dependencies (Composer & NPM)
-echo "🎼 Running Composer installation..."
-composer install --no-interaction --optimize-autoloader
-
-echo "🎸 Running NPM installation and build..."
-npm install
-npm run build
+echo "🚀 Running Laravel Runtime Setup..."
 
 # 3. Laravel Specifics
 echo "🔗 Creating storage link..."
 php artisan storage:link --force
 
-echo "🔒 Setting permissions for storage and bootstrap/cache..."
-chmod -R 775 storage bootstrap/cache
-chown -R www-data:www-data storage bootstrap/cache
-
 echo "🐘 Running database migrations..."
+# Clear cache first to avoid "relation does not exist" errors from ServiceProviders
+php artisan cache:clear
 php artisan migrate --force
 
 echo "🌱 Seeding database..."
@@ -95,6 +77,10 @@ php artisan db:seed --force
 echo "⚡ Optimizing Laravel..."
 php artisan optimize
 
-echo "✅ Automation Setup Complete!"
+echo "🔒 Finalizing permissions..."
+chmod -R 777 storage bootstrap/cache
+chown -R www-data:www-data storage bootstrap/cache
+
+echo "✅ Runtime Setup Complete!"
 
 exec "$@"

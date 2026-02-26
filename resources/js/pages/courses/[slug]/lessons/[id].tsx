@@ -35,6 +35,7 @@ import {
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { toast } from 'sonner';
 
 interface LessonShowProps {
     course: Course;
@@ -101,8 +102,19 @@ export default function LessonShow({
     }, [currentLessonProgress, hasResumed]);
 
     const saveProgress = (time: number, isCompleted: boolean = false) => {
-        // Only save if it's a significant jump (e.g. 5 seconds) or if completed
-        if (!isCompleted && Math.abs(time - lastSavedTime.current) < 5) return;
+        // Throttling logic:
+        // Videos: Save every 5 seconds
+        // Others: Save on every update (e.g. page change or scroll milestone)
+        const isVideo = lesson.content_type === 'video';
+        if (
+            isVideo &&
+            !isCompleted &&
+            Math.abs(time - lastSavedTime.current) < 5
+        )
+            return;
+
+        // Minor optimization for non-video: only if value changed
+        if (!isVideo && !isCompleted && time === lastSavedTime.current) return;
 
         lastSavedTime.current = time;
 
@@ -116,6 +128,9 @@ export default function LessonShow({
                 {
                     preserveState: true,
                     preserveScroll: true,
+                    onSuccess: () => {
+                        toast.success('Materi selesai!');
+                    },
                 },
             );
         } else {
@@ -147,6 +162,32 @@ export default function LessonShow({
     const onEnded = () => {
         saveProgress(player.current?.currentTime || 0, true);
     };
+
+    // Article Scroll Tracking
+    useEffect(() => {
+        if (
+            lesson.content_type !== 'video' &&
+            lesson.content_type !== 'pdf' &&
+            !currentLessonProgress?.completed_at
+        ) {
+            const handleScroll = () => {
+                const scrollHeight = document.documentElement.scrollHeight;
+                const scrollTop = window.scrollY;
+                const clientHeight = window.innerHeight;
+
+                const scrollPercentage =
+                    ((scrollTop + clientHeight) / scrollHeight) * 100;
+
+                if (scrollPercentage >= 90) {
+                    saveProgress(Math.floor(scrollPercentage), true);
+                    window.removeEventListener('scroll', handleScroll);
+                }
+            };
+
+            window.addEventListener('scroll', handleScroll);
+            return () => window.removeEventListener('scroll', handleScroll);
+        }
+    }, [lesson.id, lesson.content_type, currentLessonProgress?.completed_at]);
 
     const videoSrc = lesson.video_path
         ? `/storage/${lesson.video_path}`
@@ -365,6 +406,10 @@ export default function LessonShow({
                                     <PdfViewer
                                         file={`/lessons/${lesson.slug}/pdf`}
                                         title={lesson.title}
+                                        onProgress={(page) =>
+                                            saveProgress(page)
+                                        }
+                                        onComplete={() => saveProgress(0, true)} // 0 as second arg doesn't matter much for PDF completion
                                     />
                                 )}
 

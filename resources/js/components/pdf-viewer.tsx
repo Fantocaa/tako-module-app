@@ -10,9 +10,16 @@ pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/b
 interface PdfViewerProps {
     file: string;
     title: string;
+    onProgress?: (page: number) => void;
+    onComplete?: () => void;
 }
 
-export default function PdfViewer({ file, title }: PdfViewerProps) {
+export default function PdfViewer({
+    file,
+    title,
+    onProgress,
+    onComplete,
+}: PdfViewerProps) {
     const [numPages, setNumPages] = useState<number>(0);
     const [pageNumber, setPageNumber] = useState<number>(1);
     const [scale, setScale] = useState<number>(1.2);
@@ -57,7 +64,19 @@ export default function PdfViewer({ file, title }: PdfViewerProps) {
 
     function onDocumentLoadSuccess({ numPages }: { numPages: number }) {
         setNumPages(numPages);
+        // If it's a 1-page PDF, mark as complete immediately
+        if (numPages === 1 && onComplete) {
+            onComplete();
+        }
     }
+
+    const handlePageChange = (newPage: number) => {
+        setPageNumber(newPage);
+        if (onProgress) onProgress(newPage);
+        if (newPage === numPages && onComplete) {
+            onComplete();
+        }
+    };
 
     return (
         <div
@@ -72,7 +91,7 @@ export default function PdfViewer({ file, title }: PdfViewerProps) {
                     <div className="flex items-center gap-4">
                         <button
                             disabled={pageNumber <= 1}
-                            onClick={() => setPageNumber((prev) => prev - 1)}
+                            onClick={() => handlePageChange(pageNumber - 1)}
                             className="rounded-lg p-2 transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
                         >
                             <ChevronLeft className="h-5 w-5" />
@@ -82,7 +101,7 @@ export default function PdfViewer({ file, title }: PdfViewerProps) {
                         </span>
                         <button
                             disabled={pageNumber >= numPages}
-                            onClick={() => setPageNumber((prev) => prev + 1)}
+                            onClick={() => handlePageChange(pageNumber + 1)}
                             className="rounded-lg p-2 transition-all hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-30"
                         >
                             <ChevronRight className="h-5 w-5" />
