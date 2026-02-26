@@ -1,12 +1,16 @@
 version: '3'
 services:
     php_laravel:
-        build: ./.docker/php
+        build:
+            context: .
+            dockerfile: ./.docker/php/Dockerfile
         image: php:latest
         container_name: php_laravel
         hostname: 'php'
         volumes:
             - .:/var/www/html
+            - /var/www/html/vendor
+            - /var/www/html/node_modules
             - ./.docker/php/www.conf:/usr/local/etc/php-fpm.d/www.conf
         working_dir: /var/www/html
         networks:
@@ -23,7 +27,7 @@ services:
             POSTGRES_USER: ${DB_USERNAME:-fantoca}
             POSTGRES_PASSWORD: ${DB_PASSWORD:-12341234}
         volumes:
-            # - pg_master_data:/var/lib/postgresql/data
+            - ./database/data/pgsql:/var/lib/postgresql
             - ./.docker/postgres/primary/postgresql.conf:/etc/postgresql/postgresql.conf:ro
             - ./.docker/postgres/primary/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
             - ./.docker/postgres/init-primary:/docker-entrypoint-initdb.d:ro
@@ -53,7 +57,9 @@ services:
             - tako-network
 
     nginx_laravel:
-        build: ./.docker/nginx
+        build:
+            context: .
+            dockerfile: ./.docker/nginx/Dockerfile
         image: nginx:latest
         container_name: tako-nginx
         hostname: 'tako-nginx'
