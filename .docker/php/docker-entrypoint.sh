@@ -3,19 +3,17 @@
 # Destination of env file inside container
 ENV_FILE="/var/www/html/.env"
 
-# 1. Ensure .env exists first (Needed for Xdebug loop and Composer discovery)
+# 1. Ensure .env exists first
 if [ ! -f "${ENV_FILE}" ]; then
     echo "📄 .env file not found, copying from .env.example..."
-    cp .env.example .env
+    cp .env.example "${ENV_FILE}"
 fi
 
 # Loop through XDEBUG, PHP_IDE_CONFIG and REMOTE_HOST variables and check if they are set.
-# ... (rest of Xdebug logic remains the same)
 for VAR in XDEBUG PHP_IDE_CONFIG REMOTE_HOST
 do
   if [ -z "${!VAR}" ] && [ -f "${ENV_FILE}" ]; then
-    VALUE=$(grep $VAR "${ENV_FILE}" | cut -d '=' -f 2-)
-# ... (lines continue)
+    VALUE=$(grep "$VAR" "${ENV_FILE}" | cut -d '=' -f 2-)
     if [ ! -z "${VALUE}" ]; then
       # Before adding the export we clear the value, if set, to prevent duplication.
       sed -i "/$VAR/d"  ~/.bashrc
@@ -27,8 +25,7 @@ done
 # Source the .bashrc file so that the exported variables are available.
 . ~/.bashrc
 
-# If there is still no value for the REMOTE_HOST variable then we set it to the default of host.docker.internal. This
-# value will be sufficient for windows and mac environments.
+# If there is still no value for the REMOTE_HOST variable then we set it to the default of host.docker.internal.
 if [ -z "${REMOTE_HOST}" ]; then
   REMOTE_HOST="host.docker.internal"
   sed -i "/REMOTE_HOST/d"  ~/.bashrc
@@ -44,11 +41,8 @@ if [ "true" == "$XDEBUG" ] && [ ! -f /usr/local/etc/php/conf.d/docker-php-ext-xd
   # Remove PHP_IDE_CONFIG from cron file so we do not duplicate it when adding below
   sed -i '/PHP_IDE_CONFIG/d' /etc/cron.d/laravel-scheduler
   if [ ! -z "${PHP_IDE_CONFIG}" ]; then
-    # Add PHP_IDE_CONFIG to cron file. Cron by default does not load enviromental variables. The server name, set here, is
-    # used by PHPSTORM for path mappings
     echo -e "PHP_IDE_CONFIG=\"$PHP_IDE_CONFIG\"\n$(cat /etc/cron.d/laravel-scheduler)" > /etc/cron.d/laravel-scheduler
   fi
-  # Enable xdebug estension and set up the docker-php-ext-xdebug.ini file with the required xdebug settings
   docker-php-ext-enable xdebug && \
   echo "xdebug.remote_enable=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
   echo "xdebug.remote_autostart=1" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini; \
@@ -56,64 +50,13 @@ if [ "true" == "$XDEBUG" ] && [ ! -f /usr/local/etc/php/conf.d/docker-php-ext-xd
   echo "xdebug.remote_host=$REMOTE_HOST" >> /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini;
 
 elif [ -f /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini ]; then
-  # Remove PHP_IDE_CONFIG from cron file if already added
   sed -i '/PHP_IDE_CONFIG/d' /etc/cron.d/laravel-scheduler
-  # Remove Xdebug config file disabling xdebug
   rm -rf /usr/local/etc/php/conf.d/docker-php-ext-xdebug.ini
 fi
 
-# ---------------------------------------------------------
-# Laravel Runtime Setup (Only database & links)
-# ---------------------------------------------------------
-
-echo "🚀 Running Laravel Runtime Setup..."
-
-# 2. Check for PHP dependencies (vendor)
-if [ ! -d "vendor" ]; then
-    echo "🎼 vendor directory not found, running composer install..."
-    composer install --no-interaction --optimize-autoloader
-fi
-
-# 3. Ensure APP_KEY is set (Needs vendor/autoload.php)
-if ! grep -q "APP_KEY=base64:" .env || [ -z "$(grep "APP_KEY=base64:" .env | cut -d '=' -f 2)" ]; then
-    echo "🔑 APP_KEY not found or empty, generating..."
-    php artisan key:generate --force
-fi
-
-# 4. Check for Node dependencies (node_modules)
-if [ ! -d "node_modules" ]; then
-    echo "🎸 node_modules not found, running npm install..."
-    npm install
-fi
-
-# 5. Check for compiled assets
-if [ ! -d "public/build" ]; then
-    echo "⚡ Assets not compiled, running npm run build..."
-    npm run build
-fi
-
-# 6. Laravel Specifics
-echo "🧹 Clearing all cached configurations..."
-php artisan optimize:clear
-
-echo "🔗 Creating storage link..."
-php artisan storage:link --force
-
-echo "🐘 Running database migrations..."
-# Clear cache first to avoid "relation does not exist" errors from ServiceProviders
-php artisan cache:clear
-php artisan migrate --force
-
-echo "🌱 Seeding database..."
-php artisan db:seed --force
-
-echo "⚡ Optimizing Laravel..."
-php artisan optimize
-
+# 4. Finalizing permissions
 echo "🔒 Finalizing permissions..."
-chmod -R 777 storage bootstrap/cache
+chmod -R 775 storage bootstrap/cache
 chown -R www-data:www-data storage bootstrap/cache
-
-echo "✅ Runtime Setup Complete!"
 
 exec "$@"

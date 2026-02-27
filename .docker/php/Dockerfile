@@ -10,7 +10,8 @@ RUN apt-get update && \
         openssh-server \
         git \
         cron \
-        nano
+        nano \
+        supervisor
 
 # Install PHP extensions using the helper script
 RUN curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions -o /usr/local/bin/install-php-extensions && \
@@ -24,7 +25,6 @@ RUN install-php-extensions gd
 
 # Part 2: Database and Cache
 RUN install-php-extensions soap pdo_pgsql pdo_mysql
-# RUN install-php-extensions redis mongodb
 RUN install-php-extensions redis
 RUN install-php-extensions imagick xdebug memcached
 
@@ -63,26 +63,20 @@ ADD ./.docker/php/local.ini /usr/local/etc/php/conf.d
 #####################################
 # Aliases:
 #####################################
-# docker-compose exec php-fpm dep --> locally installed Deployer binaries
 RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/vendor/bin/dep "$@"' > /usr/bin/dep
 RUN chmod +x /usr/bin/dep
-# docker-compose exec php-fpm art --> php artisan
 RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan "$@"' > /usr/bin/art
 RUN chmod +x /usr/bin/art
-# docker-compose exec php-fpm migrate --> php artisan migrate
 RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan migrate "$@"' > /usr/bin/migrate
 RUN chmod +x /usr/bin/migrate
-# docker-compose exec php-fpm fresh --> php artisan migrate:fresh --seed
 RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan migrate:fresh --seed' > /usr/bin/fresh
 RUN chmod +x /usr/bin/fresh
-# docker-compose exec php-fpm t --> run the tests for the project and generate testdox
 RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan config:clear\n/var/www/vendor/bin/phpunit -d memory_limit=2G --stop-on-error --stop-on-failure --testdox-text=tests/report.txt "$@"' > /usr/bin/t
 RUN chmod +x /usr/bin/t
-# docker-compose exec php-fpm d --> run the Laravel Dusk browser tests for the project
 RUN echo '#!/bin/bash\n/usr/local/bin/php /var/www/html/artisan config:clear\n/bin/bash\n/usr/local/bin/php /var/www/html/artisan dusk -d memory_limit=2G --stop-on-error --stop-on-failure --testdox-text=tests/report-dusk.txt "$@"' > /usr/bin/d
 RUN chmod +x /usr/bin/d
 
-RUN rm -r /var/lib/apt/lists/*
+RUN rm -rf /var/lib/apt/lists/*
 
 # Copy existing application directory contents
 COPY . /var/www/html
@@ -94,6 +88,10 @@ WORKDIR /var/www/html
 RUN chmod -R 775 storage bootstrap/cache && \
     chown -R www-data:www-data storage bootstrap/cache
 
+# Supervisor config
+COPY ./.docker/php/supervisord.conf /etc/supervisor/supervisord.conf
+COPY ./.docker/php/supervisor.conf /etc/supervisor/conf.d/supervisor.conf
+
 COPY ./.docker/php/docker-entrypoint.sh /usr/local/bin/
 RUN sed -i 's/\r$//' /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
@@ -102,4 +100,4 @@ RUN ln -s /usr/local/bin/docker-entrypoint.sh /
 ENTRYPOINT ["docker-entrypoint.sh"]
 
 EXPOSE 9000
-CMD ["php-fpm"]
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/supervisord.conf"]

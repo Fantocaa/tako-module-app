@@ -54,6 +54,9 @@ help:
 	@echo "🔥  Redis CLI:"
 	@echo "  make redis          - Open redis-cli inside the Redis container"
 	@echo ""
+	@echo "🚀  Laravel Setup:"
+	@echo "  make setup          - Run initial Laravel setup (key, migration, seed, optimize)"
+	@echo ""
 
 ## 💻 Start the DEV environment (with override)
 up:
@@ -118,6 +121,16 @@ redis:
 ## 🧪 Run PHPUnit tests
 test:
 	docker-compose exec -u www-data $(APP_CONTAINER) php artisan test
+
+## 🚀 Run initial Laravel setup
+setup:
+	@echo "🚀 Starting Laravel Setup..."
+	docker-compose exec -u www-data $(APP_CONTAINER) php artisan key:generate --force
+	docker-compose exec -u www-data $(APP_CONTAINER) php artisan storage:link --force
+	docker-compose exec -u www-data $(APP_CONTAINER) php artisan migrate --force
+	docker-compose exec -u www-data $(APP_CONTAINER) php artisan db:seed --force
+	docker-compose exec -u www-data $(APP_CONTAINER) php artisan optimize
+	@echo "✅ Setup Complete!"
 
 ## Fix for make to avoid creating unnecessary files
 %:
