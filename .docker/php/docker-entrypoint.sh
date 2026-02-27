@@ -62,6 +62,18 @@ fi
 
 echo "🚀 Running Laravel Runtime Setup..."
 
+# 1. Ensure .env exists
+if [ ! -f .env ]; then
+    echo "📄 .env file not found, copying from .env.example..."
+    cp .env.example .env
+fi
+
+# 2. Ensure APP_KEY is set
+if ! grep -q "APP_KEY=base64:" .env || [ -z "$(grep "APP_KEY=base64:" .env | cut -d '=' -f 2)" ]; then
+    echo "🔑 APP_KEY not found or empty, generating..."
+    php artisan key:generate --force
+fi
+
 # 3. Laravel Specifics
 echo "🧹 Clearing all cached configurations..."
 php artisan optimize:clear

@@ -17,25 +17,15 @@ RUN curl -sSL https://github.com/mlocati/docker-php-extension-installer/releases
     chmod +x /usr/local/bin/install-php-extensions
 
 # Part 1: Core and common extensions
-RUN install-php-extensions \
-    exif \
-    pcntl \
-    intl \
-    gmp \
-    zip \
-    bcmath \
-    gd
+RUN install-php-extensions exif pcntl
+RUN install-php-extensions intl gmp
+RUN install-php-extensions zip bcmath
+RUN install-php-extensions gd
 
-# Part 2: Database, Cache, and specialized extensions (including soap)
-RUN install-php-extensions \
-    soap \
-    pdo_pgsql \
-    pdo_mysql \
-    redis \
-    mongodb \
-    imagick \
-    xdebug \
-    memcached
+# Part 2: Database and Cache
+RUN install-php-extensions soap pdo_pgsql pdo_mysql
+RUN install-php-extensions redis mongodb
+RUN install-php-extensions imagick xdebug memcached
 
 #####################################
 # Composer:
@@ -99,14 +89,8 @@ COPY . /var/www/html
 # Set working directory
 WORKDIR /var/www/html
 
-# Environment Setup
-RUN cp .env.example .env
-
 # Composer install
 RUN composer install --no-interaction --optimize-autoloader
-
-# Generate key
-RUN php artisan key:generate --force
 
 # NPM install and build
 RUN npm install && npm run build
