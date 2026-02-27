@@ -24,7 +24,8 @@ RUN install-php-extensions gd
 
 # Part 2: Database and Cache
 RUN install-php-extensions soap pdo_pgsql pdo_mysql
-RUN install-php-extensions redis mongodb
+# RUN install-php-extensions redis mongodb
+RUN install-php-extensions redis
 RUN install-php-extensions imagick xdebug memcached
 
 #####################################
