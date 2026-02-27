@@ -1,15 +1,21 @@
 #!/bin/bash
 
 # Destination of env file inside container
-ENV_FILE="/var/www/.env"
+ENV_FILE="/var/www/html/.env"
+
+# 1. Ensure .env exists first (Needed for Xdebug loop and Composer discovery)
+if [ ! -f "${ENV_FILE}" ]; then
+    echo "📄 .env file not found, copying from .env.example..."
+    cp .env.example .env
+fi
 
 # Loop through XDEBUG, PHP_IDE_CONFIG and REMOTE_HOST variables and check if they are set.
-# If they are not set then check if we have values for them in the env file, if the env file exists. If we have values
-# in the env file then add exports for these in in the ~./bashrc file.
+# ... (rest of Xdebug logic remains the same)
 for VAR in XDEBUG PHP_IDE_CONFIG REMOTE_HOST
 do
   if [ -z "${!VAR}" ] && [ -f "${ENV_FILE}" ]; then
-    VALUE=$(grep $VAR $ENV_FILE | cut -d '=' -f 2-)
+    VALUE=$(grep $VAR "${ENV_FILE}" | cut -d '=' -f 2-)
+# ... (lines continue)
     if [ ! -z "${VALUE}" ]; then
       # Before adding the export we clear the value, if set, to prevent duplication.
       sed -i "/$VAR/d"  ~/.bashrc
@@ -62,19 +68,31 @@ fi
 
 echo "🚀 Running Laravel Runtime Setup..."
 
-# 1. Ensure .env exists
-if [ ! -f .env ]; then
-    echo "📄 .env file not found, copying from .env.example..."
-    cp .env.example .env
+# 2. Check for PHP dependencies (vendor)
+if [ ! -d "vendor" ]; then
+    echo "🎼 vendor directory not found, running composer install..."
+    composer install --no-interaction --optimize-autoloader
 fi
 
-# 2. Ensure APP_KEY is set
+# 3. Ensure APP_KEY is set (Needs vendor/autoload.php)
 if ! grep -q "APP_KEY=base64:" .env || [ -z "$(grep "APP_KEY=base64:" .env | cut -d '=' -f 2)" ]; then
     echo "🔑 APP_KEY not found or empty, generating..."
     php artisan key:generate --force
 fi
 
-# 3. Laravel Specifics
+# 4. Check for Node dependencies (node_modules)
+if [ ! -d "node_modules" ]; then
+    echo "🎸 node_modules not found, running npm install..."
+    npm install
+fi
+
+# 5. Check for compiled assets
+if [ ! -d "public/build" ]; then
+    echo "⚡ Assets not compiled, running npm run build..."
+    npm run build
+fi
+
+# 6. Laravel Specifics
 echo "🧹 Clearing all cached configurations..."
 php artisan optimize:clear
 

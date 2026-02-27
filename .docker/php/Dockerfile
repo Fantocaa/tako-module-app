@@ -90,12 +90,6 @@ COPY . /var/www/html
 # Set working directory
 WORKDIR /var/www/html
 
-# Composer install
-RUN composer install --no-interaction --optimize-autoloader
-
-# NPM install and build
-RUN npm install && npm run build
-
 # Set permissions
 RUN chmod -R 775 storage bootstrap/cache && \
     chown -R www-data:www-data storage bootstrap/cache
